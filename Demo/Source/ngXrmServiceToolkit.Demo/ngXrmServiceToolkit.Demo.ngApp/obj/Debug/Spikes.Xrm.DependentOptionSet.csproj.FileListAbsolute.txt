@@ -1,0 +1,5 @@
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\Spikes.Xrm\Spikes.Xrm.DependentOptionSet\bin\Spikes.Xrm.DependentOptionSet.dll.config
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\Spikes.Xrm\Spikes.Xrm.DependentOptionSet\bin\Spikes.Xrm.DependentOptionSet.dll
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\Spikes.Xrm\Spikes.Xrm.DependentOptionSet\bin\Spikes.Xrm.DependentOptionSet.pdb
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\Spikes.Xrm\Spikes.Xrm.DependentOptionSet\obj\Debug\Spikes.Xrm.DependentOptionSet.dll
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\Spikes.Xrm\Spikes.Xrm.DependentOptionSet\obj\Debug\Spikes.Xrm.DependentOptionSet.pdb

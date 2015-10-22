@@ -1,0 +1,170 @@
+﻿<div class="container">
+    <p><h2>Actions:</h2></p>
+    <hr />
+    <p><h3>SOAP:</h3></p>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    General <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.soapWhoAmI()">Who Am I</a></li>
+                    <li><a ng-click="vm.soapGetCurrentUserId()">Get Current User Id</a></li>
+                    <li><a ng-click="vm.soapGetCurrentUserRoles()">Get Current User Roles</a></li>
+                    <li><a ng-click="vm.soapIsCurrentUserInRole()">Is User In Role</a></li>
+                    <li><a ng-click="vm.soapGetCurrentUserBusinessUnitId()">Get Current User Business Unit Id</a></li>
+                    <li><a ng-click="vm.soapFetch()">Fetch 10 active accounts</a></li>
+                    <li><a ng-click="vm.soapQueryByAttribute()">QueryByAttribute (FirstName = John)</a></li>
+                    <li><a ng-click="vm.soapQueryAllByAttribute()">QueryAllByAttribute (FirstName = John / Limited to 10000)</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Account <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.soapCreateAccount()">Create</a></li>
+                    <li><a ng-click="vm.soapRetrieveAccount()">Retrieve</a></li>
+                    <li><a ng-click="vm.soapRetrieveMultipleAccounts()">Retrieve Multiple</a></li>
+                    <li><a ng-click="vm.soapUpdateAccount()">Update</a></li>
+                    <li><a ng-click="vm.soapDeleteAccount()">Delete</a></li>
+                    <li><a ng-click="vm.soapSetActiveAccount()">Set Active</a></li>
+                    <li><a ng-click="vm.soapSetInactiveAccount()">Set Inactive</a></li>
+                    <li class="divider"></li>
+                    <li class="dropdown-submenu">
+                        <a tabindex="-1">Assign</a>
+                        <ul class="dropdown-menu">
+                            <li><a ng-click="vm.soapAssignAccountToMe()">To Me</a></li>
+                            <li><a ng-click="vm.soapAssignAccountToAnother()">To Another</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Contact <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.soapCreateContact()">Create</a></li>
+                    <li><a ng-click="vm.soapRetrieveContact()">Retrieve</a></li>
+                    <li><a ng-click="vm.soapRetrieveMultipleContacts()">Retrieve Multiple</a></li>
+                    <li><a ng-click="vm.soapUpdateContact()">Update</a></li>
+                    <li><a ng-click="vm.soapDeleteContact()">Delete</a></li>
+                    <li><a ng-click="vm.soapSetActiveContact()">Set Active</a></li>
+                    <li><a ng-click="vm.soapSetInactiveContact()">Set Inactive</a></li>
+                    <li class="divider"></li>
+                    <li class="dropdown-submenu">
+                        <a tabindex="-1">Assign</a>
+                        <ul class="dropdown-menu">
+                            <li><a ng-click="vm.soapAssignContactToMe()">To Me</a></li>
+                            <li><a ng-click="vm.soapAssignContactToAnother()">To Another</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Account - Contact <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.soapAssociate()">Associate</a></li>
+                    <li><a ng-click="vm.soapDisassociate()">Disassociate</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Metadata <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.soapRetrieveAllEntityMetadata()">Retrieve All Entity Metadata</a></li>
+                    <li><a ng-click="vm.soapRetrieveEntityMetadata()">Retrieve Entity Metadata for Account</a></li>
+                    <li><a ng-click="vm.soapRetrieveAttributeMetadata()">Retrieve Attribute Metadata for Account attribute primarycontactid</a></li>
+                </ul>
+            </div>
+        </div>        
+    </div>
+    <br />
+    <div class="row">
+        <div class="col-xs-6">
+            <span>Demo account:</span>
+            <pre>{{ vm.demoSoapAccount | json }}</pre>
+        </div>
+        <div class="col-xs-6">
+            <span>Demo contact:</span>
+            <pre>{{ vm.demoSoapContact | json }}</pre>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <span>Fetch Result:</span>
+            <pre>{{ vm.demoSoapFetch | json }}</pre>
+        </div>
+        <div class="col-xs-6">
+            <span>Metadata Result:</span>
+            <pre>{{ vm.demoSoapMetadata | json }}</pre>
+        </div>
+    </div>
+    <hr />
+    <p><h3>REST:</h3></p>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    General <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.restRetrieveMultiple()">Fetch 10 active accounts</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Account <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.restCreateAccount()">Create</a></li>
+                    <li><a ng-click="vm.restRetrieveAccount()">Retrieve</a></li>
+                    <li><a ng-click="vm.restUpdateAccount()">Update</a></li>
+                    <li><a ng-click="vm.restDeleteAccount()">Delete</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Contact <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.restCreateContact()">Create</a></li>
+                    <li><a ng-click="vm.restRetrieveContact()">Retrieve</a></li>
+                    <li><a ng-click="vm.restUpdateContact()">Update</a></li>
+                    <li><a ng-click="vm.restDeleteContact()">Delete</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Account - Contact <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.restAssociate()">Associate</a></li>
+                    <li><a ng-click="vm.restDisassociate()">Disassociate</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col-xs-6">
+            <span>Demo account:</span>
+            <pre>{{ vm.demoRestAccount | json }}</pre>
+        </div>
+        <div class="col-xs-6">
+            <span>Demo contact:</span>
+            <pre>{{ vm.demoRestContact | json }}</pre>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <span>Fetch Result:</span>
+            <pre>{{ vm.demoRestFetch | json }}</pre>
+        </div>
+    </div>
+</div>

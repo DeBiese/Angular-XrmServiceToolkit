@@ -1,0 +1,29 @@
+﻿<div id="wrapper">
+    <header class="clearfix">
+        <nav class="navbar navbar-default" role="navigation">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#/"><img src="images/Logo_Spikes_Red.png" id="spikeslogo" alt="Spikes" /> ngXrmServiceToolkit Demo</a>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li><a ui-sref="app.welcome" class="btn btn-default btn-margin-5">Home</a></li>
+                        <li><a ui-sref="app.demo" class="btn btn-default btn-margin-5">Demo</a></li>
+                        <li><a ui-sref="app.about" class="btn btn-default btn-margin-5">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div id="page-wrapper" style="min-height: 561px;">
+        <div ui-view></div>
+    </div>
+</div>

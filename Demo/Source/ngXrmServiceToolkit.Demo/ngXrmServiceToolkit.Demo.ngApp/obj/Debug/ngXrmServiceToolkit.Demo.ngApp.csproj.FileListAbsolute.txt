@@ -1,0 +1,12 @@
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\obj\Debug\ngXrmServiceToolkit.Demo.ngApp.csprojResolveAssemblyReference.cache
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\bin\ngXrmServiceToolkit.Demo.ngApp.dll.config
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\bin\ngXrmServiceToolkit.Demo.ngApp.dll
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\bin\ngXrmServiceToolkit.Demo.ngApp.pdb
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\obj\Debug\ngXrmServiceToolkit.Demo.ngApp.dll
+C:\Cloud\CodebasePersonal\Visual Studio 2013\Projects\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\obj\Debug\ngXrmServiceToolkit.Demo.ngApp.pdb
+C:\Cloud\GitHub\Angular-XrmServiceToolkit\Demo\Source\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\bin\ngXrmServiceToolkit.Demo.ngApp.dll.config
+C:\Cloud\GitHub\Angular-XrmServiceToolkit\Demo\Source\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\bin\ngXrmServiceToolkit.Demo.ngApp.dll
+C:\Cloud\GitHub\Angular-XrmServiceToolkit\Demo\Source\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\bin\ngXrmServiceToolkit.Demo.ngApp.pdb
+C:\Cloud\GitHub\Angular-XrmServiceToolkit\Demo\Source\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\obj\Debug\ngXrmServiceToolkit.Demo.ngApp.csprojResolveAssemblyReference.cache
+C:\Cloud\GitHub\Angular-XrmServiceToolkit\Demo\Source\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\obj\Debug\ngXrmServiceToolkit.Demo.ngApp.dll
+C:\Cloud\GitHub\Angular-XrmServiceToolkit\Demo\Source\ngXrmServiceToolkit.Demo\ngXrmServiceToolkit.Demo.ngApp\obj\Debug\ngXrmServiceToolkit.Demo.ngApp.pdb

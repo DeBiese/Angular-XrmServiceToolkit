@@ -1,0 +1,24 @@
+﻿<div class="modal-header">
+    <h3>Select user to assign to</h3>
+</div>
+<div class="modal-body">
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label for="txtUser" class="control-label">User :</label>
+                <select class="form-control" id="cmbUser" ng-model="vm.crmUserId" ng-options="u.id as u.attributes.fullname.value for u in vm.crmUserList"></select>
+            </div>
+        </div>
+        <div class="col-xs-6">
+            &nbsp;
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-primary" ng-click="$close(vm.crmUserId)">
+        Select
+    </button>
+    <button type="submit" class="btn btn-warning" ng-click="$dismiss('cancel')">
+        Cancel
+    </button>
+</div>
