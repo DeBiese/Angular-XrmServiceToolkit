@@ -17,6 +17,18 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# .net dll's and pdb
+*.dll
+*.pdb
+
+# Visual Studio
+*.suo
+*.cache
+
+# Folders
+/bin
+/obj
+
 # =========================
 # Operating System Files
 # =========================
@@ -41,3 +53,6 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.dll
+*.pdb
+*.cache
