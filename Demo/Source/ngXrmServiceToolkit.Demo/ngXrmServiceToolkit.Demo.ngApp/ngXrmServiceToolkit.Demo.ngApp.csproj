@@ -868,8 +868,6 @@
     <Content Include="Scripts\loading_bar.min.js" />
     <Content Include="Scripts\q.js" />
     <Content Include="Scripts\q.min.js" />
-    <Content Include="Scripts\XrmServiceToolkit.js" />
-    <Content Include="Scripts\XrmServiceToolkit.min.js" />
     <None Include="Scripts\jquery-2.1.4.intellisense.js" />
     <Content Include="Scripts\jquery-2.1.4.js" />
     <Content Include="Scripts\jquery_2.1.4.min.js" />

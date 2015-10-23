@@ -2,7 +2,7 @@ ngXrmServiceToolkit
 ===================
 
 A conversion of parts (SOAP and REST) of the existing [XrmServiceToolkit](https://xrmservicetoolkit.codeplex.com/) for usage in an AngularJS application inside Dynamics CRM 2015.
-Take a look at the demo (source code) for an example of each of the available methods.
+The included demo (source code) contains an example of each of the available methods.
 Everything is written in Typescript, but the corresponding javascript is obviously also available. 
 
 ##Dependencies
@@ -13,7 +13,7 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 
 ##Usage
 
- 1. Include the ngXrmServiceToolkit (.ts or .js) in your project.
+ 1. Include the ngXrmServiceToolkit in your project.
  2. Add the ngXrm module to your angular application:
  
 	```javascript
@@ -30,7 +30,8 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	```
 
 ##Available Methods SOAP
-	####Typescript
+	##Typescript
+
 	```javascript
 	createEntity: (bEntity: Common.BusinessEntity) => ng.IPromise<string>;
 	updateEntity: (bEntity: Common.BusinessEntity) => ng.IPromise<string>;
@@ -55,7 +56,8 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	```
 
 ##Available Methods REST
-	####Typescript
+	##Typescript
+
 	```javascript
 	createRecord: (object: any, type: string) => ng.IPromise<any>;
 	retrieveRecord: (id: string, type: string, select: string[], expand: string[]) => ng.IPromise<any>;
