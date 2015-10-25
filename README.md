@@ -20,7 +20,7 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	angular.module('myModule',['ngXrm'])
 	```
  3. Inject the SOAP or REST clients into your service:
-	####Typescript
+
 	```javascript
 	static $inject = ["ngXrmServiceToolkitSoap"];
 	constructor(private ngXrmSoapSvc : ngXrm.XrmServiceToolkit.Soap.SoapClient) {}
@@ -30,7 +30,6 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	```
 
 ##Available Methods SOAP
-	##Typescript
 
 	```javascript
 	createEntity: (bEntity: Common.BusinessEntity) => ng.IPromise<string>;
@@ -56,7 +55,6 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	```
 
 ##Available Methods REST
-	##Typescript
 
 	```javascript
 	createRecord: (object: any, type: string) => ng.IPromise<any>;
