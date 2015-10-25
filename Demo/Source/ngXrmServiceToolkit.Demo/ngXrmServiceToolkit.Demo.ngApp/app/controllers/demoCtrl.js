@@ -380,6 +380,27 @@ var ngXrmServiceToolkit;
                         var self = this;
                         self.openSelectUserModal('account');
                     };
+                    DemoController.prototype.soapRetrievePrincipalAccessAccount = function () {
+                        var self = this;
+                        if (!self.soapAccountExists()) {
+                            bootbox.alert("An account has not yet been created. Try the create functionality before trying the retrievePrincipalAccess again.");
+                            return;
+                        }
+                        var options = new XrmCommon.AccessOptions({
+                            targetEntityName: 'account',
+                            targetEntityId: self.soapAccountId,
+                            principalEntityName: 'systemuser',
+                            principalEntityId: self._currentUserId
+                        });
+                        self.xrmSvc.soapRetrievePrincipalAccess(options)
+                            .then(function (rslt) {
+                            var msg = ["Access Rights :<br />", rslt.join("<br />")].join("");
+                            bootbox.alert(msg);
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
                     DemoController.prototype.soapCreateContact = function () {
                         var self = this;
                         if (self.soapContactExists()) {
@@ -544,6 +565,27 @@ var ngXrmServiceToolkit;
                     DemoController.prototype.soapAssignContactToAnother = function () {
                         var self = this;
                         self.openSelectUserModal('contact');
+                    };
+                    DemoController.prototype.soapRetrievePrincipalAccessContact = function () {
+                        var self = this;
+                        if (!self.soapContactExists()) {
+                            bootbox.alert("A contact has not yet been created. Try the create functionality before trying the retrievePrincipalAccess again.");
+                            return;
+                        }
+                        var options = new XrmCommon.AccessOptions({
+                            targetEntityName: 'contact',
+                            targetEntityId: self.soapContactId,
+                            principalEntityName: 'systemuser',
+                            principalEntityId: self._currentUserId
+                        });
+                        self.xrmSvc.soapRetrievePrincipalAccess(options)
+                            .then(function (rslt) {
+                            var msg = ["Access Rights :<br />", rslt.join("<br />")].join("");
+                            bootbox.alert(msg);
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
                     };
                     DemoController.prototype.soapAssociate = function () {
                         var self = this;

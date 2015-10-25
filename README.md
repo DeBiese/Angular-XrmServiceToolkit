@@ -31,7 +31,6 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 
 ##Available Methods SOAP
 
-	```javascript
 	createEntity: (bEntity: Common.BusinessEntity) => ng.IPromise<string>;
 	updateEntity: (bEntity: Common.BusinessEntity) => ng.IPromise<string>;
 	deleteEntity: (entityName: string, id: string) => ng.IPromise<string>;
@@ -49,14 +48,13 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	getCurrentUserRoles: () => ng.IPromise<string[]>;
 	isCurrentUserInRole: (args: string[]) => ng.IPromise<boolean>;
 	assign: (targetEntityName: string, targetId: string, assigneeEntityName: string, assigneeId: string) => ng.IPromise<string>;
+	retrievePrincipalAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string[]>;
 	retrieveAllEntitiesMetadata: (entityFilters: string[], retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 	retrieveEntityMetadata: (entityFilters: string[], logicalName: string, retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 	retrieveAttributeMetadata: (entityLogicalName: string, attributeLogicalName: string, retrieveIfPublished: boolean) => ng.IPromise<any[]>;
-	```
 
 ##Available Methods REST
 
-	```javascript
 	createRecord: (object: any, type: string) => ng.IPromise<any>;
 	retrieveRecord: (id: string, type: string, select: string[], expand: string[]) => ng.IPromise<any>;
 	updateRecord: (id: string, type: string, object: any) => ng.IPromise<any>;
@@ -64,7 +62,6 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	retrieveMultipleRecords: (type: string, options?: string) => ng.IPromise<any[]>;
 	associateRecord: (entityid1: string, odataSetName1: string, entityid2: string, odataSetName2: string, relationship: string) => ng.IPromise<any>;
 	disassociateRecord: (entityid1: string, odataSetName: string, entityid2: string, relationship: string) => ng.IPromise<any>;
-	```
 
 ##Demo
 

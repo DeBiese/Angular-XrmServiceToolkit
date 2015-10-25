@@ -29,6 +29,7 @@ module ngXrmServiceToolkit.Demo.ngApp.Services {
 		soapDelete: (entityName: string, entityId: string) => ng.IPromise<string>;
 		soapSetState: (entityName: string, id: string, stateCode: number, statusCode: number) => ng.IPromise<string>;
 		soapAssign: (targetEntityName: string, targetId: string, assigneeEntityName: string, assigneeId: string) => ng.IPromise<string>;
+		soapRetrievePrincipalAccess: (accessOptions: XrmCommon.AccessOptions) => ng.IPromise<string[]>;
 
 		soapAssociate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: XrmCommon.BusinessEntity[]) => ng.IPromise<string>;
 		soapDisassociate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: XrmCommon.BusinessEntity[]) => ng.IPromise<string>;
@@ -291,6 +292,17 @@ module ngXrmServiceToolkit.Demo.ngApp.Services {
 				.catch((error) => {
 					console.log(error);
 					return Q.reject("An error occurred while assigning the entity.");
+				});
+		}
+		soapRetrievePrincipalAccess(accessOptions: XrmCommon.AccessOptions): ng.IPromise<string[]> {
+			const self = this;
+			return self.ngXrmSoapSvc.retrievePrincipalAccess(accessOptions)
+				.then((rslt) => {
+					return rslt;
+				})
+				.catch((error) => {
+					console.log(error);
+					return Q.reject("An error occurred during the retrievePrincipalAccess request.");
 				});
 		}
 		

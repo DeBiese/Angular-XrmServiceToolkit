@@ -239,6 +239,17 @@ var ngXrmServiceToolkit;
                             return Q.reject("An error occurred while assigning the entity.");
                         });
                     };
+                    XrmService.prototype.soapRetrievePrincipalAccess = function (accessOptions) {
+                        var self = this;
+                        return self.ngXrmSoapSvc.retrievePrincipalAccess(accessOptions)
+                            .then(function (rslt) {
+                            return rslt;
+                        })
+                            .catch(function (error) {
+                            console.log(error);
+                            return Q.reject("An error occurred during the retrievePrincipalAccess request.");
+                        });
+                    };
                     XrmService.prototype.soapAssociate = function (relationshipName, targetEntityName, targetId, relatedEntityName, relatedBusinessEntities) {
                         var self = this;
                         return self.ngXrmSoapSvc.associate(relationshipName, targetEntityName, targetId, relatedEntityName, relatedBusinessEntities)

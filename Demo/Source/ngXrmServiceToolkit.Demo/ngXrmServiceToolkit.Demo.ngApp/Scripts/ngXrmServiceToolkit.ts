@@ -56,6 +56,18 @@ module ngXrm.XrmServiceToolkit.Common{
 	/*
 	 * INTERFACES
 	 */
+	export interface IAccessOptions {
+		//represents the name of the target entity
+		targetEntityName: string;
+		//represents the GUID of the target entity
+		targetEntityId: string;
+		//represents the name of the principal entity
+		principalEntityName: string;
+		//represents the GUID of the principal entity
+		principalEntityId: string;
+		//represents the access conditions of the results
+		accessRights?: string[];
+	}
 
 	export interface IAttribute {
 		type?: string;
@@ -192,6 +204,16 @@ module ngXrm.XrmServiceToolkit.Common{
 		principalEntityId: string;
 		//represents the access conditions of the results
 		accessRights: string[];
+
+		constructor(accessOptions?: IAccessOptions) {
+			if (accessOptions != null) {
+				this.targetEntityName = accessOptions.targetEntityName;
+				this.targetEntityId = accessOptions.targetEntityId;
+				this.principalEntityName = accessOptions.principalEntityName;
+				this.principalEntityId = accessOptions.principalEntityId;
+				this.accessRights = accessOptions.accessRights;
+			}
+		}
 	}
 	
 	export class BusinessEntity {
@@ -941,7 +963,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 		grantAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
 		modifyAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
 		revokeAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
-		retrievePrincipalAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
+		retrievePrincipalAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string[]>;
 		retrieveAllEntitiesMetadata: (entityFilters: string[], retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 		retrieveEntityMetadata: (entityFilters: string[], logicalName: string, retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 		retrieveAttributeMetadata: (entityLogicalName: string, attributeLogicalName: string, retrieveIfPublished: boolean) => ng.IPromise<any[]>;
@@ -2225,9 +2247,11 @@ module ngXrm.XrmServiceToolkit.Soap {
 		/**
 		 * retrievePrincipalAccess :
 		 * Sends $http request to do a retrievePrincipalAccess request.
+		 * The method retrieves the access rights of a specified security principal (user or team)
+		 * to the specified record. 
 		 * Tested : Untested
 		 */
-		retrievePrincipalAccess(accessOptions: Common.AccessOptions): ng.IPromise<string> {
+		retrievePrincipalAccess(accessOptions: Common.AccessOptions): ng.IPromise<string[]> {
 			///<param name="accessOptions" type="Object">
 			/// A JavaScript Object with properties corresponding to the retrievePrincipalAccess Criteria
 			/// that are valid for retrievePrincipalAccess operations.
@@ -2241,12 +2265,38 @@ module ngXrm.XrmServiceToolkit.Soap {
 				|| accessOptions.targetEntityId === undefined || accessOptions.targetEntityId === ''
 				|| accessOptions.principalEntityName === undefined || accessOptions.principalEntityName === ''
 				|| accessOptions.principalEntityId === undefined || accessOptions.principalEntityId === '') {
-				throw new Error("AccessOptions are invalid for retrievePrincipalAccess.");
+				return Q.reject("AccessOptions are invalid for retrievePrincipalAccess.");
 			}
 
 			const self = this;
 
-			return Q.reject("Not implemented yet!");
+			let request: string = ["<request i:type='b:RetrievePrincipalAccessRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
+				"<a:Parameters xmlns:c='http://schemas.datacontract.org/2004/07/System.Collections.Generic'>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>Target</c:key>",
+				"<c:value i:type='a:EntityReference'>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.targetEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.targetEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>Principal</c:key>",
+				"<c:value i:type='a:EntityReference'>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.principalEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.principalEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"</a:Parameters>",
+				"<a:RequestId i:nil='true' />",
+				"<a:RequestName>RetrievePrincipalAccess</a:RequestName>",
+				"</request>"].join("");
+
+			return self._doRequest(request, "Execute").then((rslt) => {
+				let result: string = self.__selectSingleNodeText(rslt, "//b:value");
+				return result.split(' ');
+			});
 		}
 
 		/**

@@ -11,7 +11,14 @@ var ngXrm;
              * CLASSES
              */
             var AccessOptions = (function () {
-                function AccessOptions() {
+                function AccessOptions(accessOptions) {
+                    if (accessOptions != null) {
+                        this.targetEntityName = accessOptions.targetEntityName;
+                        this.targetEntityId = accessOptions.targetEntityId;
+                        this.principalEntityName = accessOptions.principalEntityName;
+                        this.principalEntityId = accessOptions.principalEntityId;
+                        this.accessRights = accessOptions.accessRights;
+                    }
                 }
                 return AccessOptions;
             })();
@@ -1827,6 +1834,8 @@ var ngXrm;
                 /**
                  * retrievePrincipalAccess :
                  * Sends $http request to do a retrievePrincipalAccess request.
+                 * The method retrieves the access rights of a specified security principal (user or team)
+                 * to the specified record.
                  * Tested : Untested
                  */
                 SoapClient.prototype.retrievePrincipalAccess = function (accessOptions) {
@@ -1842,10 +1851,35 @@ var ngXrm;
                         || accessOptions.targetEntityId === undefined || accessOptions.targetEntityId === ''
                         || accessOptions.principalEntityName === undefined || accessOptions.principalEntityName === ''
                         || accessOptions.principalEntityId === undefined || accessOptions.principalEntityId === '') {
-                        throw new Error("AccessOptions are invalid for retrievePrincipalAccess.");
+                        return Q.reject("AccessOptions are invalid for retrievePrincipalAccess.");
                     }
                     var self = this;
-                    return Q.reject("Not implemented yet!");
+                    var request = ["<request i:type='b:RetrievePrincipalAccessRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
+                        "<a:Parameters xmlns:c='http://schemas.datacontract.org/2004/07/System.Collections.Generic'>",
+                        "<a:KeyValuePairOfstringanyType>",
+                        "<c:key>Target</c:key>",
+                        "<c:value i:type='a:EntityReference'>",
+                        "<a:Id>", Common.Helper.encodeValue(accessOptions.targetEntityId), "</a:Id>",
+                        "<a:LogicalName>", accessOptions.targetEntityName, "</a:LogicalName>",
+                        "<a:Name i:nil='true' />",
+                        "</c:value>",
+                        "</a:KeyValuePairOfstringanyType>",
+                        "<a:KeyValuePairOfstringanyType>",
+                        "<c:key>Principal</c:key>",
+                        "<c:value i:type='a:EntityReference'>",
+                        "<a:Id>", Common.Helper.encodeValue(accessOptions.principalEntityId), "</a:Id>",
+                        "<a:LogicalName>", accessOptions.principalEntityName, "</a:LogicalName>",
+                        "<a:Name i:nil='true' />",
+                        "</c:value>",
+                        "</a:KeyValuePairOfstringanyType>",
+                        "</a:Parameters>",
+                        "<a:RequestId i:nil='true' />",
+                        "<a:RequestName>RetrievePrincipalAccess</a:RequestName>",
+                        "</request>"].join("");
+                    return self._doRequest(request, "Execute").then(function (rslt) {
+                        var result = self.__selectSingleNodeText(rslt, "//b:value");
+                        return result.split(' ');
+                    });
                 };
                 /**
                 * retrieveAllEntitiesMetadata :

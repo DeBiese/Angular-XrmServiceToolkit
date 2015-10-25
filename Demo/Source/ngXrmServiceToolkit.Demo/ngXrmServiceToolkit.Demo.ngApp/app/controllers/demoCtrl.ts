@@ -24,6 +24,7 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 		soapSetInactiveAccount: () => void;
 		soapAssignAccountToMe: () => void;
 		soapAssignAccountToAnother: () => void;
+		soapRetrievePrincipalAccessAccount: () => void;
 
 		soapCreateContact: () => void;
 		soapRetrieveContact: () => void;
@@ -34,6 +35,7 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 		soapSetInactiveContact: () => void;
 		soapAssignContactToMe: () => void;
 		soapAssignContactToAnother: () => void;
+		soapRetrievePrincipalAccessContact: () => void;
 
 		soapAssociate: () => void;
 		soapDisassociate: () => void;
@@ -479,6 +481,30 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 
 			self.openSelectUserModal('account');
 		}
+		soapRetrievePrincipalAccessAccount(): void {
+			const self = this;
+
+			if (!self.soapAccountExists()) {
+				bootbox.alert("An account has not yet been created. Try the create functionality before trying the retrievePrincipalAccess again.");
+				return;
+			}
+
+			let options = new XrmCommon.AccessOptions({
+				targetEntityName: 'account',
+				targetEntityId: self.soapAccountId,
+				principalEntityName: 'systemuser',
+				principalEntityId: self._currentUserId
+			});
+
+			self.xrmSvc.soapRetrievePrincipalAccess(options)
+				.then((rslt) => {
+					let msg: string = ["Access Rights :<br />", rslt.join("<br />")].join("");
+					bootbox.alert(msg);
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
 
 		soapCreateContact(): void {
 			const self = this;
@@ -663,6 +689,30 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 			const self = this;
 
 			self.openSelectUserModal('contact');
+		}
+		soapRetrievePrincipalAccessContact(): void {
+			const self = this;
+
+			if (!self.soapContactExists()) {
+				bootbox.alert("A contact has not yet been created. Try the create functionality before trying the retrievePrincipalAccess again.");
+				return;
+			}
+
+			let options = new XrmCommon.AccessOptions({
+				targetEntityName: 'contact',
+				targetEntityId: self.soapContactId,
+				principalEntityName: 'systemuser',
+				principalEntityId: self._currentUserId
+			});
+
+			self.xrmSvc.soapRetrievePrincipalAccess(options)
+				.then((rslt) => {
+					let msg: string = ["Access Rights :<br />", rslt.join("<br />")].join("");
+					bootbox.alert(msg);
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
 		}
 
 		soapAssociate(): void {
