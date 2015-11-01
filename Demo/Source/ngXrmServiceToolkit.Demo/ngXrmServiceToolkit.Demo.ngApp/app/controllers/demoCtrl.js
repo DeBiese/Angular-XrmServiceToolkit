@@ -18,13 +18,18 @@ var ngXrmServiceToolkit;
                         this._soapAssociated = false;
                         this._soapAccountActive = true;
                         this._soapContactActive = true;
+                        this._soapTeamActive = false;
+                        this._soapTeamUseable = false;
                         this._restAssociated = false;
                         this.soapAccountId = '';
                         this.soapContactId = '';
+                        this.soapTeamId = '';
+                        this.soapTeamMemberId = '';
                         this.restAccountId = '';
                         this.restContactId = '';
                         this.demoSoapFetch = [];
                         this.demoSoapMetadata = [];
+                        this.demoSoapAccess = [];
                         this.demoRestFetch = [];
                         this.soapFetchResult = null;
                         this.crmUserList = [];
@@ -37,6 +42,7 @@ var ngXrmServiceToolkit;
                         this.xrmSvc.soapGetCurrentUserId()
                             .then(function (rslt) {
                             _this._currentUserId = rslt;
+                            _this.initDemoSoapTeam();
                         })
                             .catch(function (error) {
                             console.log(error);
@@ -45,6 +51,7 @@ var ngXrmServiceToolkit;
                     }
                     DemoController.prototype.soapAccountExists = function () { return this.soapAccountId !== ''; };
                     DemoController.prototype.soapContactExists = function () { return this.soapContactId !== ''; };
+                    DemoController.prototype.soapTeamExists = function () { return this.soapTeamId !== ''; };
                     DemoController.prototype.soapAssociated = function () { return this._soapAssociated; };
                     DemoController.prototype.restAccountExists = function () { return this.restAccountId !== ''; };
                     DemoController.prototype.restContactExists = function () { return this.restContactId != ''; };
@@ -60,6 +67,17 @@ var ngXrmServiceToolkit;
                         this.demoSoapContact.attributes["lastname"] = "Demo Soap Contact";
                         this.demoSoapContact.attributes["gendercode"] = { value: 1, type: "OptionSetValue" };
                     };
+                    DemoController.prototype.initDemoSoapTeam = function () {
+                        var self = this;
+                        self.demoSoapTeam = new XrmCommon.BusinessEntity({ logicalName: 'team' });
+                        self.demoSoapTeam.attributes["name"] = "Demo Soap Team";
+                        self.demoSoapTeam.attributes["teamtype"] = { value: 1, type: "OptionSetValue" }; //1 : Access
+                        self.demoSoapTeam.attributes["administratorid"] = { type: "EntityReference", logicalName: "systemuser", id: self._currentUserId };
+                        self.xrmSvc.soapGetCurrentUserBusinessUnitId().then(function (rslt) {
+                            self.demoSoapTeam.attributes["businessunitid"] = { type: "EntityReference", logicalName: "businessunit", id: rslt };
+                            self._soapTeamUseable = true;
+                        });
+                    };
                     DemoController.prototype.initDemoRestAccount = function () {
                         this.demoRestAccount = {};
                         this.demoRestAccount.Name = "Demo Rest Account";
@@ -71,7 +89,18 @@ var ngXrmServiceToolkit;
                         this.demoRestContact.LastName = "Demo Rest Contact";
                         this.demoRestContact.GenderCode = { Value: 1 };
                     };
-                    DemoController.prototype.soapDoAssignAccount = function (entityName, ownerId) {
+                    DemoController.prototype.soapAddSelectedMemberToTeam = function (memberId) {
+                        var self = this;
+                        self.xrmSvc.soapAddMemberTeamRequest(self.soapTeamId, memberId)
+                            .then(function (rslt) {
+                            self.soapTeamMemberId = memberId;
+                            bootbox.alert("Selected member added to team.");
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapDoAssignRecord = function (entityName, ownerId) {
                         var self = this;
                         if (entityName === "account" ? !self.soapAccountExists() : !self.soapContactExists()) {
                             bootbox.alert([entityName === "account" ? "An " : "A ", entityName, " has not yet been created. Try the create functionality before trying the assign again."].join(""));
@@ -103,7 +132,10 @@ var ngXrmServiceToolkit;
                             }
                         });
                         self.selectUserModalInstance.result.then(function (userId) {
-                            self.soapDoAssignAccount(entityName, userId);
+                            if (entityName === 'account' || entityName === 'contact')
+                                self.soapDoAssignRecord(entityName, userId);
+                            else if (entityName === 'team')
+                                self.soapAddSelectedMemberToTeam(userId);
                         }, function (result) {
                             if (result === "cancel") {
                             }
@@ -116,6 +148,10 @@ var ngXrmServiceToolkit;
                                 self.crmUserList = users;
                             });
                         });
+                    };
+                    DemoController.prototype.teamStatus = function () {
+                        var self = this;
+                        return self._soapTeamUseable ? 'Ready' : 'Not Ready';
                     };
                     DemoController.prototype.soapWhoAmI = function () {
                         var self = this;
@@ -374,13 +410,13 @@ var ngXrmServiceToolkit;
                     };
                     DemoController.prototype.soapAssignAccountToMe = function () {
                         var self = this;
-                        self.soapDoAssignAccount('account', self._currentUserId);
+                        self.soapDoAssignRecord('account', self._currentUserId);
                     };
                     DemoController.prototype.soapAssignAccountToAnother = function () {
                         var self = this;
                         self.openSelectUserModal('account');
                     };
-                    DemoController.prototype.soapRetrievePrincipalAccessAccount = function () {
+                    DemoController.prototype.soapRetrievePrincipalAccessAccountMe = function () {
                         var self = this;
                         if (!self.soapAccountExists()) {
                             bootbox.alert("An account has not yet been created. Try the create functionality before trying the retrievePrincipalAccess again.");
@@ -392,10 +428,173 @@ var ngXrmServiceToolkit;
                             principalEntityName: 'systemuser',
                             principalEntityId: self._currentUserId
                         });
+                        self.demoSoapAccess = [];
                         self.xrmSvc.soapRetrievePrincipalAccess(options)
                             .then(function (rslt) {
-                            var msg = ["Access Rights :<br />", rslt.join("<br />")].join("");
-                            bootbox.alert(msg);
+                            self.demoSoapAccess = rslt;
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapCreateTeam = function () {
+                        var self = this;
+                        if (self.soapTeamExists()) {
+                            bootbox.alert("A team has already been created. Try the delete functionality before trying the create again.");
+                            return;
+                        }
+                        self.xrmSvc.soapCreate(self.demoSoapTeam)
+                            .then(function (rslt) {
+                            self.soapTeamId = rslt;
+                            self.demoSoapTeam.id = rslt;
+                            bootbox.alert(["Demo Team created with id : ", rslt].join(""));
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapDeleteTeam = function () {
+                        var self = this;
+                        if (!self.soapTeamExists()) {
+                            bootbox.alert("A team has not yet been created. Try the create functionality before trying the delete again.");
+                            return;
+                        }
+                        self.xrmSvc.soapDelete('team', self.soapTeamId)
+                            .then(function (rslt) {
+                            bootbox.alert(["Demo Team deleted with id : ", self.soapTeamId].join(""));
+                            self.soapTeamId = '';
+                            self._soapTeamUseable = false;
+                            if (self._currentUserId != '')
+                                self.initDemoSoapTeam();
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapAddMemberTeam = function () {
+                        var self = this;
+                        if (!self.soapTeamExists()) {
+                            bootbox.alert("A team has not yet been created. Try the create functionality before trying the add member again.");
+                            return;
+                        }
+                        self.openSelectUserModal('team');
+                    };
+                    DemoController.prototype.soapRemoveMemberTeam = function () {
+                        var self = this;
+                        if (!self.soapTeamExists()) {
+                            bootbox.alert("A team has not yet been created. Try the create functionality before trying the remove member again.");
+                            return;
+                        }
+                        if (self.soapTeamMemberId === '') {
+                            bootbox.alert("A member has not yet been added to the team. Try the add member before trying the remove member again.");
+                            return;
+                        }
+                        self.xrmSvc.soapRemoveMemberTeamRequest(self.soapTeamId, self.soapTeamMemberId)
+                            .then(function (rslt) {
+                            self.soapTeamMemberId = '';
+                            bootbox.alert("Member removed from team.");
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapRetrievePrincipalAccessAccountTeam = function () {
+                        var self = this;
+                        if (!self.soapAccountExists()) {
+                            bootbox.alert("An account has not yet been created. Try the create functionality before trying the retrievePrincipalAccess again.");
+                            return;
+                        }
+                        if (!self.soapTeamExists()) {
+                            bootbox.alert("A team has not yet been created. Create the team before trying the retrievePrincipalAccess again.");
+                            return;
+                        }
+                        var options = new XrmCommon.AccessOptions({
+                            targetEntityName: 'account',
+                            targetEntityId: self.soapAccountId,
+                            principalEntityName: 'team',
+                            principalEntityId: self.soapTeamId
+                        });
+                        self.demoSoapAccess = [];
+                        self.xrmSvc.soapRetrievePrincipalAccess(options)
+                            .then(function (rslt) {
+                            self.demoSoapAccess = rslt;
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapGrantAccessToAccount = function () {
+                        var self = this;
+                        if (!self.soapAccountExists()) {
+                            bootbox.alert("An account has not yet been created. Try the create functionality before trying the revoke access again.");
+                            return;
+                        }
+                        if (!self.soapTeamExists()) {
+                            bootbox.alert("A team has not yet been created. Create the team before trying the revoke access again.");
+                            return;
+                        }
+                        var options = new XrmCommon.AccessOptions({
+                            targetEntityName: 'account',
+                            targetEntityId: self.soapAccountId,
+                            principalEntityName: 'team',
+                            principalEntityId: self.soapTeamId,
+                            accessRights: ["ReadAccess"]
+                        });
+                        self.xrmSvc.soapGrantAccess(options)
+                            .then(function (rslt) {
+                            bootbox.alert("Access to the account has been granted for the team.");
+                            self.soapRetrievePrincipalAccessAccountTeam();
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapModifyAccessToAccount = function () {
+                        var self = this;
+                        if (!self.soapAccountExists()) {
+                            bootbox.alert("An account has not yet been created. Try the create functionality before trying the revoke access again.");
+                            return;
+                        }
+                        if (!self.soapTeamExists()) {
+                            bootbox.alert("A team has not yet been created. Create the team before trying the revoke access again.");
+                            return;
+                        }
+                        var options = new XrmCommon.AccessOptions({
+                            targetEntityName: 'account',
+                            targetEntityId: self.soapAccountId,
+                            principalEntityName: 'team',
+                            principalEntityId: self.soapTeamId,
+                            accessRights: ["AssignAccess", "WriteAccess"]
+                        });
+                        self.xrmSvc.soapModifyAccess(options)
+                            .then(function (rslt) {
+                            bootbox.alert("Access to the account has been modified for the team.");
+                            self.soapRetrievePrincipalAccessAccountTeam();
+                        })
+                            .catch(function (error) {
+                            bootbox.alert(error);
+                        });
+                    };
+                    DemoController.prototype.soapRevokeAccessToAccount = function () {
+                        var self = this;
+                        if (!self.soapAccountExists()) {
+                            bootbox.alert("An account has not yet been created. Try the create functionality before trying the revoke access again.");
+                            return;
+                        }
+                        if (!self.soapTeamExists()) {
+                            bootbox.alert("A team has not yet been created. Create the team before trying the revoke access again.");
+                            return;
+                        }
+                        var options = new XrmCommon.AccessOptions({
+                            targetEntityName: 'account',
+                            targetEntityId: self.soapAccountId,
+                            principalEntityName: 'team',
+                            principalEntityId: self.soapTeamId
+                        });
+                        self.xrmSvc.soapRevokeAccess(options)
+                            .then(function (rslt) {
+                            bootbox.alert("Access to the account has been revoked for the team.");
+                            self.soapRetrievePrincipalAccessAccountTeam();
                         })
                             .catch(function (error) {
                             bootbox.alert(error);
@@ -560,7 +759,7 @@ var ngXrmServiceToolkit;
                     };
                     DemoController.prototype.soapAssignContactToMe = function () {
                         var self = this;
-                        self.soapDoAssignAccount('contact', self._currentUserId);
+                        self.soapDoAssignRecord('contact', self._currentUserId);
                     };
                     DemoController.prototype.soapAssignContactToAnother = function () {
                         var self = this;
@@ -578,10 +777,12 @@ var ngXrmServiceToolkit;
                             principalEntityName: 'systemuser',
                             principalEntityId: self._currentUserId
                         });
+                        self.demoSoapAccess = [];
                         self.xrmSvc.soapRetrievePrincipalAccess(options)
                             .then(function (rslt) {
-                            var msg = ["Access Rights :<br />", rslt.join("<br />")].join("");
-                            bootbox.alert(msg);
+                            self.demoSoapAccess = rslt;
+                            //let msg: string = ["Access Rights :<br />", rslt.join("<br />")].join("");
+                            //bootbox.alert(msg);
                         })
                             .catch(function (error) {
                             bootbox.alert(error);

@@ -6,6 +6,8 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 	import XrmCommon = ngXrm.XrmServiceToolkit.Common;
 
 	export interface IDemoController {
+		teamStatus: () => string;
+
 		soapWhoAmI: () => void;
 		soapGetCurrentUserId: () => void;
 		soapGetCurrentUserRoles: () => void;
@@ -24,7 +26,16 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 		soapSetInactiveAccount: () => void;
 		soapAssignAccountToMe: () => void;
 		soapAssignAccountToAnother: () => void;
-		soapRetrievePrincipalAccessAccount: () => void;
+		soapRetrievePrincipalAccessAccountMe: () => void;
+
+		soapCreateTeam: () => void;
+		soapDeleteTeam: () => void;
+		soapAddMemberTeam: () => void;
+		soapRemoveMemberTeam: () => void;
+		soapRetrievePrincipalAccessAccountTeam: () => void;
+		soapGrantAccessToAccount: () => void;
+		soapModifyAccessToAccount: () => void;
+		soapRevokeAccessToAccount: () => void;
 
 		soapCreateContact: () => void;
 		soapRetrieveContact: () => void;
@@ -67,10 +78,13 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 		private _soapAssociated: boolean = false;
 		private _soapAccountActive: boolean = true;
 		private _soapContactActive: boolean = true;
+		private _soapTeamActive: boolean = false;
+		private _soapTeamUseable: boolean = false;
 		private _restAssociated: boolean = false;		
 
 		private soapAccountExists(): boolean { return this.soapAccountId !== ''; }
 		private soapContactExists(): boolean { return this.soapContactId !== ''; }
+		private soapTeamExists(): boolean { return this.soapTeamId !== ''; }
 		private soapAssociated(): boolean { return this._soapAssociated; }
 
 		private restAccountExists(): boolean { return this.restAccountId !== ''; }
@@ -79,6 +93,8 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 
 		private soapAccountId: string = '';
 		private soapContactId: string = '';
+		private soapTeamId: string = '';
+		private soapTeamMemberId: string = '';
 		private restAccountId: string = '';
 		private restContactId: string = '';
 
@@ -86,6 +102,8 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 		demoSoapContact: XrmCommon.BusinessEntity;
 		demoSoapFetch: XrmCommon.BusinessEntity[] = [];
 		demoSoapMetadata: XrmCommon.IMetadata[] = [];
+		demoSoapTeam: XrmCommon.BusinessEntity;
+		demoSoapAccess: string[] = [];
 		demoRestAccount: any;
 		demoRestContact: any;
 		demoRestFetch: any[] = [];
@@ -106,6 +124,7 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 			this.xrmSvc.soapGetCurrentUserId()
 				.then((rslt) => {
 					this._currentUserId = rslt;
+					this.initDemoSoapTeam();
 				})
 				.catch((error) => {
 					console.log(error);
@@ -126,6 +145,17 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 			this.demoSoapContact.attributes["lastname"] = "Demo Soap Contact";
 			this.demoSoapContact.attributes["gendercode"] = { value: 1, type: "OptionSetValue" };
 		}
+		private initDemoSoapTeam() {
+			const self = this;
+			self.demoSoapTeam = new XrmCommon.BusinessEntity({ logicalName: 'team' });
+			self.demoSoapTeam.attributes["name"] = "Demo Soap Team";
+			self.demoSoapTeam.attributes["teamtype"] = { value: 1, type: "OptionSetValue" };//1 : Access
+			self.demoSoapTeam.attributes["administratorid"] = { type: "EntityReference", logicalName: "systemuser", id: self._currentUserId };
+			self.xrmSvc.soapGetCurrentUserBusinessUnitId().then((rslt) => {
+				self.demoSoapTeam.attributes["businessunitid"] = { type: "EntityReference", logicalName: "businessunit", id: rslt };
+				self._soapTeamUseable = true;
+			});
+		}
 
 		private initDemoRestAccount() {
 			this.demoRestAccount = {};
@@ -140,7 +170,20 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 			this.demoRestContact.GenderCode = { Value: 1 };
 		}
 
-		private soapDoAssignAccount(entityName: string, ownerId: string) {
+		private soapAddSelectedMemberToTeam(memberId: string) {
+			const self = this;
+
+			self.xrmSvc.soapAddMemberTeamRequest(self.soapTeamId, memberId)
+				.then((rslt) => {
+					self.soapTeamMemberId = memberId;
+					bootbox.alert("Selected member added to team.");
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+
+		private soapDoAssignRecord(entityName: string, ownerId: string) {
 			const self = this;
 
 			if (entityName === "account" ? !self.soapAccountExists() : !self.soapContactExists()) {
@@ -176,7 +219,10 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 
 			self.selectUserModalInstance.result.then(
 				function (userId: string) {
-					self.soapDoAssignAccount(entityName, userId);
+					if (entityName === 'account' || entityName === 'contact')
+						self.soapDoAssignRecord(entityName, userId);
+					else if (entityName === 'team')
+						self.soapAddSelectedMemberToTeam(userId);
 				},
 				function (result: any) {
 					if (result === "cancel") {
@@ -192,6 +238,11 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 					self.crmUserList = users;
 				});
 			});
+		}
+
+		teamStatus(): string {
+			const self = this;
+			return self._soapTeamUseable ? 'Ready' : 'Not Ready';
 		}
 
 		soapWhoAmI(): void {
@@ -474,14 +525,14 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 		soapAssignAccountToMe(): void {
 			const self = this;
 
-			self.soapDoAssignAccount('account', self._currentUserId);
+			self.soapDoAssignRecord('account', self._currentUserId);
 		}
 		soapAssignAccountToAnother(): void {
 			const self = this;
 
 			self.openSelectUserModal('account');
 		}
-		soapRetrievePrincipalAccessAccount(): void {
+		soapRetrievePrincipalAccessAccountMe(): void {
 			const self = this;
 
 			if (!self.soapAccountExists()) {
@@ -496,10 +547,194 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 				principalEntityId: self._currentUserId
 			});
 
+			self.demoSoapAccess = [];
 			self.xrmSvc.soapRetrievePrincipalAccess(options)
 				.then((rslt) => {
-					let msg: string = ["Access Rights :<br />", rslt.join("<br />")].join("");
-					bootbox.alert(msg);
+					self.demoSoapAccess = rslt;
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+
+		soapCreateTeam(): void {
+			const self = this;
+
+			if (self.soapTeamExists()) {
+				bootbox.alert("A team has already been created. Try the delete functionality before trying the create again.");
+				return;
+			}
+
+			self.xrmSvc.soapCreate(self.demoSoapTeam)
+				.then((rslt) => {
+					self.soapTeamId = rslt;
+					self.demoSoapTeam.id = rslt;
+					bootbox.alert(["Demo Team created with id : ", rslt].join(""));
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+		soapDeleteTeam(): void {
+			const self = this;
+
+			if (!self.soapTeamExists()) {
+				bootbox.alert("A team has not yet been created. Try the create functionality before trying the delete again.");
+				return;
+			}
+
+			self.xrmSvc.soapDelete('team', self.soapTeamId)
+				.then((rslt) => {
+					bootbox.alert(["Demo Team deleted with id : ", self.soapTeamId].join(""));
+					self.soapTeamId = '';
+					self._soapTeamUseable = false;
+					if (self._currentUserId != '')
+						self.initDemoSoapTeam();
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+		soapAddMemberTeam(): void {
+			const self = this;
+
+			if (!self.soapTeamExists()) {
+				bootbox.alert("A team has not yet been created. Try the create functionality before trying the add member again.");
+				return;
+			}
+
+			self.openSelectUserModal('team');
+		}
+		soapRemoveMemberTeam(): void {
+			const self = this;
+
+			if (!self.soapTeamExists()) {
+				bootbox.alert("A team has not yet been created. Try the create functionality before trying the remove member again.");
+				return;
+			}
+			if (self.soapTeamMemberId === '') {
+				bootbox.alert("A member has not yet been added to the team. Try the add member before trying the remove member again.");
+				return;
+			}
+
+			self.xrmSvc.soapRemoveMemberTeamRequest(self.soapTeamId, self.soapTeamMemberId)
+				.then((rslt) => {
+					self.soapTeamMemberId = '';
+					bootbox.alert("Member removed from team.");
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+		soapRetrievePrincipalAccessAccountTeam(): void {
+			const self = this;
+
+			if (!self.soapAccountExists()) {
+				bootbox.alert("An account has not yet been created. Try the create functionality before trying the retrievePrincipalAccess again.");
+				return;
+			}
+			if (!self.soapTeamExists()) {
+				bootbox.alert("A team has not yet been created. Create the team before trying the retrievePrincipalAccess again.");
+				return;
+			}
+
+			let options = new XrmCommon.AccessOptions({
+				targetEntityName: 'account',
+				targetEntityId: self.soapAccountId,
+				principalEntityName: 'team',
+				principalEntityId: self.soapTeamId
+			});
+
+			self.demoSoapAccess = [];
+			self.xrmSvc.soapRetrievePrincipalAccess(options)
+				.then((rslt) => {
+					self.demoSoapAccess = rslt;
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+		soapGrantAccessToAccount(): void {
+			const self = this;
+
+			if (!self.soapAccountExists()) {
+				bootbox.alert("An account has not yet been created. Try the create functionality before trying the revoke access again.");
+				return;
+			}
+			if (!self.soapTeamExists()) {
+				bootbox.alert("A team has not yet been created. Create the team before trying the revoke access again.");
+				return;
+			}
+
+			let options = new XrmCommon.AccessOptions({
+				targetEntityName: 'account',
+				targetEntityId: self.soapAccountId,
+				principalEntityName: 'team',
+				principalEntityId: self.soapTeamId,
+				accessRights: ["ReadAccess"]
+			});
+
+			self.xrmSvc.soapGrantAccess(options)
+				.then((rslt) => {
+					bootbox.alert("Access to the account has been granted for the team.");
+					self.soapRetrievePrincipalAccessAccountTeam();
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+		soapModifyAccessToAccount(): void {
+			const self = this;
+
+			if (!self.soapAccountExists()) {
+				bootbox.alert("An account has not yet been created. Try the create functionality before trying the revoke access again.");
+				return;
+			}
+			if (!self.soapTeamExists()) {
+				bootbox.alert("A team has not yet been created. Create the team before trying the revoke access again.");
+				return;
+			}
+
+			let options = new XrmCommon.AccessOptions({
+				targetEntityName: 'account',
+				targetEntityId: self.soapAccountId,
+				principalEntityName: 'team',
+				principalEntityId: self.soapTeamId,
+				accessRights: ["AssignAccess", "WriteAccess"]
+			});
+
+			self.xrmSvc.soapModifyAccess(options)
+				.then((rslt) => {
+					bootbox.alert("Access to the account has been modified for the team.");
+					self.soapRetrievePrincipalAccessAccountTeam();
+				})
+				.catch((error) => {
+					bootbox.alert(error);
+				});
+		}
+		soapRevokeAccessToAccount(): void {
+			const self = this;
+
+			if (!self.soapAccountExists()) {
+				bootbox.alert("An account has not yet been created. Try the create functionality before trying the revoke access again.");
+				return;
+			}
+			if (!self.soapTeamExists()) {
+				bootbox.alert("A team has not yet been created. Create the team before trying the revoke access again.");
+				return;
+			}
+
+			let options = new XrmCommon.AccessOptions({
+				targetEntityName: 'account',
+				targetEntityId: self.soapAccountId,
+				principalEntityName: 'team',
+				principalEntityId: self.soapTeamId
+			});
+
+			self.xrmSvc.soapRevokeAccess(options)
+				.then((rslt) => {
+					bootbox.alert("Access to the account has been revoked for the team.");
+					self.soapRetrievePrincipalAccessAccountTeam();
 				})
 				.catch((error) => {
 					bootbox.alert(error);
@@ -683,7 +918,7 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 		soapAssignContactToMe(): void {
 			const self = this;
 
-			self.soapDoAssignAccount('contact', self._currentUserId);
+			self.soapDoAssignRecord('contact', self._currentUserId);
 		}
 		soapAssignContactToAnother(): void {
 			const self = this;
@@ -705,10 +940,12 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 				principalEntityId: self._currentUserId
 			});
 
+			self.demoSoapAccess = [];
 			self.xrmSvc.soapRetrievePrincipalAccess(options)
 				.then((rslt) => {
-					let msg: string = ["Access Rights :<br />", rslt.join("<br />")].join("");
-					bootbox.alert(msg);
+					self.demoSoapAccess = rslt;
+					//let msg: string = ["Access Rights :<br />", rslt.join("<br />")].join("");
+					//bootbox.alert(msg);
 				})
 				.catch((error) => {
 					bootbox.alert(error);

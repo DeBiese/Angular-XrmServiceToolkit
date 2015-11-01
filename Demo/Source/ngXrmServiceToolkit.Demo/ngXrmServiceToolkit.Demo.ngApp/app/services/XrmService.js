@@ -250,6 +250,39 @@ var ngXrmServiceToolkit;
                             return Q.reject("An error occurred during the retrievePrincipalAccess request.");
                         });
                     };
+                    XrmService.prototype.soapGrantAccess = function (accessOptions) {
+                        var self = this;
+                        return self.ngXrmSoapSvc.grantAccess(accessOptions)
+                            .then(function (rslt) {
+                            return rslt;
+                        })
+                            .catch(function (error) {
+                            console.log(error);
+                            return Q.reject("An error occurred during the grantAccess request.");
+                        });
+                    };
+                    XrmService.prototype.soapModifyAccess = function (accessOptions) {
+                        var self = this;
+                        return self.ngXrmSoapSvc.modifyAccess(accessOptions)
+                            .then(function (rslt) {
+                            return rslt;
+                        })
+                            .catch(function (error) {
+                            console.log(error);
+                            return Q.reject("An error occurred during the modifyAccess request.");
+                        });
+                    };
+                    XrmService.prototype.soapRevokeAccess = function (accessOptions) {
+                        var self = this;
+                        return self.ngXrmSoapSvc.revokeAccess(accessOptions)
+                            .then(function (rslt) {
+                            return rslt;
+                        })
+                            .catch(function (error) {
+                            console.log(error);
+                            return Q.reject("An error occurred during the revokeAccess request.");
+                        });
+                    };
                     XrmService.prototype.soapAssociate = function (relationshipName, targetEntityName, targetId, relatedEntityName, relatedBusinessEntities) {
                         var self = this;
                         return self.ngXrmSoapSvc.associate(relationshipName, targetEntityName, targetId, relatedEntityName, relatedBusinessEntities)
@@ -270,6 +303,28 @@ var ngXrmServiceToolkit;
                             .catch(function (error) {
                             console.log(error);
                             return Q.reject("An error occurrred while deleting the association.");
+                        });
+                    };
+                    XrmService.prototype.soapAddMemberTeamRequest = function (teamId, memberId) {
+                        var self = this;
+                        return self.ngXrmSoapSvc.addMemberTeamRequest(teamId, memberId)
+                            .then(function (rslt) {
+                            return rslt;
+                        })
+                            .catch(function (error) {
+                            console.log(error);
+                            return Q.reject("An error occurrred while adding a member to the team.");
+                        });
+                    };
+                    XrmService.prototype.soapRemoveMemberTeamRequest = function (teamId, memberId) {
+                        var self = this;
+                        return self.ngXrmSoapSvc.removeMemberTeamRequest(teamId, memberId)
+                            .then(function (rslt) {
+                            return rslt;
+                        })
+                            .catch(function (error) {
+                            console.log(error);
+                            return Q.reject("An error occurrred while removing a member from the team.");
                         });
                     };
                     //--Metadata

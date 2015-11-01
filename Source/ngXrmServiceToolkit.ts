@@ -962,8 +962,10 @@ module ngXrm.XrmServiceToolkit.Soap {
 		assign: (targetEntityName: string, targetId: string, assigneeEntityName: string, assigneeId: string) => ng.IPromise<string>;
 		grantAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
 		modifyAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
-		revokeAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
+		revokeAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;		
 		retrievePrincipalAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string[]>;
+		addMemberTeamRequest: (teamId: string, memberId: string) => ng.IPromise<any>;
+		removeMemberTeamRequest: (teamId: string, memberId: string) => ng.IPromise<any>;
 		retrieveAllEntitiesMetadata: (entityFilters: string[], retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 		retrieveEntityMetadata: (entityFilters: string[], logicalName: string, retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 		retrieveAttributeMetadata: (entityLogicalName: string, attributeLogicalName: string, retrieveIfPublished: boolean) => ng.IPromise<any[]>;
@@ -2159,8 +2161,10 @@ module ngXrm.XrmServiceToolkit.Soap {
 		/**
 		 * grantAccess :
 		 * Sends $http request to do a grantAccess request.
+		 * The method grants a specified security principal (user or team) the provided AccessRights to the given record.
 		 * Levels of Access Options are: AppendAccess, AppendToAccess, AssignAccess, CreateAccess, DeleteAccess, None, ReadAccess, ShareAccess, and WriteAccess
-		 * Tested : Untested
+		 * NOTE: Read the CRM SDK documentation for more information on the GrantAccessRequest.
+		 * Tested : Success
 		 */
 		grantAccess(accessOptions: Common.AccessOptions): ng.IPromise<string> {
 			///<param name="accessOptions" type="Object">
@@ -2182,14 +2186,51 @@ module ngXrm.XrmServiceToolkit.Soap {
 			}
 
 			const self = this;
-			return Q.reject("Not implemented yet!");
+			let accessRightString: string[] = [];
+			for (let i = 0, ilength = accessOptions.accessRights.length; i < ilength; i++) {
+				accessRightString.push(Common.Helper.encodeValue(accessOptions.accessRights[i]) + " ");
+			}
+
+			let request: string = ["<request i:type='b:GrantAccessRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
+				"<a:Parameters xmlns:c='http://schemas.datacontract.org/2004/07/System.Collections.Generic'>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>Target</c:key>",
+				"<c:value i:type='a:EntityReference'>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.targetEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.targetEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>PrincipalAccess</c:key>",
+				"<c:value i:type='b:PrincipalAccess'>",
+				"<b:AccessMask>", accessRightString.join(""), "</b:AccessMask>",
+				"<b:Principal>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.principalEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.principalEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</b:Principal>",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"</a:Parameters>",
+				"<a:RequestId i:nil='true' />",
+				"<a:RequestName>GrantAccess</a:RequestName>",
+				"</request>"].join("");
+
+			return self._doRequest(request, "Execute").then((rslt) => {
+				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let result: string = Common.Helper.crmXmlDecode(responseText);
+				return result;
+			});
 		}
 
 		/**
 		 * modifyAccess :
 		 * Sends $http request to do a modifyAccess request.
+		 * The method modifies the AccessRights of the given record for a specified security principal (user or team)
 		 * Levels of Access Options are: AppendAccess, AppendToAccess, AssignAccess, CreateAccess, DeleteAccess, None, ReadAccess, ShareAccess, and WriteAccess
-		 * Tested : Untested
+		 * NOTE: Read the CRM SDK documentation for more information on the GrantAccessRequest.
+		 * Tested : Success
 		 */
 		modifyAccess(accessOptions: Common.AccessOptions): ng.IPromise<string> {
 			///<param name="accessOptions" type="Object">
@@ -2211,13 +2252,50 @@ module ngXrm.XrmServiceToolkit.Soap {
 			}
 
 			const self = this;
-			return Q.reject("Not implemented yet!");
+			let accessRightString: string[] = [];
+			for (let i = 0, ilength = accessOptions.accessRights.length; i < ilength; i++) {
+				accessRightString.push(Common.Helper.encodeValue(accessOptions.accessRights[i]) + " ");
+			}
+
+			let request: string = ["<request i:type='b:ModifyAccessRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
+				"<a:Parameters xmlns:c='http://schemas.datacontract.org/2004/07/System.Collections.Generic'>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>Target</c:key>",
+				"<c:value i:type='a:EntityReference'>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.targetEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.targetEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>PrincipalAccess</c:key>",
+				"<c:value i:type='b:PrincipalAccess'>",
+				"<b:AccessMask>", accessRightString.join(""), "</b:AccessMask>",
+				"<b:Principal>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.principalEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.principalEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</b:Principal>",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"</a:Parameters>",
+				"<a:RequestId i:nil='true' />",
+				"<a:RequestName>ModifyAccess</a:RequestName>",
+				"</request>"].join("");
+
+			return self._doRequest(request, "Execute").then((rslt) => {
+				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let result: string = Common.Helper.crmXmlDecode(responseText);
+				return result;
+			});
 		}
 
 		/**
 		 * revokeAccess :
 		 * Sends $http request to do a revokeAccess request.
-		 * Tested : Untested
+		 * The method modifies the AccessRights of the given record for a specified security principal (user or team)
+		 * NOTE: Read the CRM SDK documentation for more information on the GrantAccessRequest.
+		 * Tested : Success
 		 */
 		revokeAccess(accessOptions: Common.AccessOptions): ng.IPromise<string> {
 			///<param name="accessOptions" type="Object">
@@ -2241,7 +2319,34 @@ module ngXrm.XrmServiceToolkit.Soap {
 
 			const self = this;
 
-			return Q.reject("Not implemented yet!");
+			let request: string = ["<request i:type='b:RevokeAccessRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
+				"<a:Parameters xmlns:c='http://schemas.datacontract.org/2004/07/System.Collections.Generic'>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>Target</c:key>",
+				"<c:value i:type='a:EntityReference'>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.targetEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.targetEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>Revokee</c:key>",
+				"<c:value i:type='a:EntityReference'>",
+				"<a:Id>", Common.Helper.encodeValue(accessOptions.principalEntityId), "</a:Id>",
+				"<a:LogicalName>", accessOptions.principalEntityName, "</a:LogicalName>",
+				"<a:Name i:nil='true' />",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"</a:Parameters>",
+				"<a:RequestId i:nil='true' />",
+				"<a:RequestName>RevokeAccess</a:RequestName>",
+				"</request>"].join("");
+
+			return self._doRequest(request, "Execute").then((rslt) => {
+				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let result: string = Common.Helper.crmXmlDecode(responseText);
+				return result;
+			});
 		}
 
 		/**
@@ -2249,7 +2354,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 		 * Sends $http request to do a retrievePrincipalAccess request.
 		 * The method retrieves the access rights of a specified security principal (user or team)
 		 * to the specified record. 
-		 * Tested : Untested
+		 * Tested : Success
 		 */
 		retrievePrincipalAccess(accessOptions: Common.AccessOptions): ng.IPromise<string[]> {
 			///<param name="accessOptions" type="Object">
@@ -2297,6 +2402,80 @@ module ngXrm.XrmServiceToolkit.Soap {
 				let result: string = self.__selectSingleNodeText(rslt, "//b:value");
 				return result.split(' ');
 			});
+		}
+
+		/*
+		 * addMemberTeamRequest : 
+		 * Request to add a member to an existing team
+		 * Tested : Success
+		 */
+		addMemberTeamRequest(teamId: string, memberId: string): ng.IPromise<any> {
+			const self = this;
+
+			let request: string = [
+				"<request i:type=\"b:AddMembersTeamRequest\" xmlns:a=\"http://schemas.microsoft.com/xrm/2011/Contracts\" xmlns:b=\"http://schemas.microsoft.com/crm/2011/Contracts\">",
+				"<a:Parameters xmlns:c=\"http://schemas.datacontract.org/2004/07/System.Collections.Generic\">",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>TeamId</c:key>",
+				"<c:value i:type=\"d:guid\" xmlns:d=\"http://schemas.microsoft.com/2003/10/Serialization/\">",
+				teamId,
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>MemberIds</c:key>",
+				"<c:value i:type=\"d:ArrayOfguid\" xmlns:d=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">",
+				"<d:guid>",
+				memberId,
+				"</d:guid>",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"</a:Parameters>",
+				"<a:RequestId i:nil=\"true\" />",
+				"<a:RequestName>AddMembersTeam</a:RequestName>",
+				"</request>"
+			].join("");
+
+			return self._doRequest(request, "Execute")
+				.then((rslt) => {
+					return rslt;
+				});
+		}
+
+		/*
+		 * removeMemberTeamRequest : 
+		 * Request to add a member to an existing team
+		 * Tested : Success		 
+		 */
+		removeMemberTeamRequest(teamId: string, memberId: string): ng.IPromise<any> {
+			const self = this;
+
+			let request: string = [
+				"<request i:type=\"b:RemoveMembersTeamRequest\" xmlns:a=\"http://schemas.microsoft.com/xrm/2011/Contracts\" xmlns:b=\"http://schemas.microsoft.com/crm/2011/Contracts\">",
+				"<a:Parameters xmlns:c=\"http://schemas.datacontract.org/2004/07/System.Collections.Generic\">",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>TeamId</c:key>",
+				"<c:value i:type=\"d:guid\" xmlns:d=\"http://schemas.microsoft.com/2003/10/Serialization/\">",
+				teamId,
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"<a:KeyValuePairOfstringanyType>",
+				"<c:key>MemberIds</c:key>",
+				"<c:value i:type=\"d:ArrayOfguid\" xmlns:d=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">",
+				"<d:guid>",
+				memberId,
+				"</d:guid>",
+				"</c:value>",
+				"</a:KeyValuePairOfstringanyType>",
+				"</a:Parameters>",
+				"<a:RequestId i:nil=\"true\" />",
+				"<a:RequestName>RemoveMembersTeam</a:RequestName>",
+				"</request>"
+			].join("");
+
+			return self._doRequest(request, "Execute")
+				.then((rslt) => {
+					return rslt;
+				});
 		}
 
 		/**

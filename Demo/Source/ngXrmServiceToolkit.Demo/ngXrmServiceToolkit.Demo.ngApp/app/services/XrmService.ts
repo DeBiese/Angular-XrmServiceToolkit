@@ -30,9 +30,15 @@ module ngXrmServiceToolkit.Demo.ngApp.Services {
 		soapSetState: (entityName: string, id: string, stateCode: number, statusCode: number) => ng.IPromise<string>;
 		soapAssign: (targetEntityName: string, targetId: string, assigneeEntityName: string, assigneeId: string) => ng.IPromise<string>;
 		soapRetrievePrincipalAccess: (accessOptions: XrmCommon.AccessOptions) => ng.IPromise<string[]>;
+		soapGrantAccess: (accessOptions: XrmCommon.AccessOptions) => ng.IPromise<string>;
+		soapModifyAccess: (accessOptions: XrmCommon.AccessOptions) => ng.IPromise<string>;
+		soapRevokeAccess: (accessOptions: XrmCommon.AccessOptions) => ng.IPromise<string>;
 
 		soapAssociate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: XrmCommon.BusinessEntity[]) => ng.IPromise<string>;
 		soapDisassociate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: XrmCommon.BusinessEntity[]) => ng.IPromise<string>;
+
+		soapAddMemberTeamRequest: (teamId: string, memberId: string) => ng.IPromise<any>;
+		soapRemoveMemberTeamRequest: (teamId: string, memberId: string) => ng.IPromise<any>;
 
 		soapRetrieveAllEntityMetadataNgXrmServiceToolkit: () => ng.IPromise<XrmCommon.IMetadata[]>;
 		soapRetrieveEntityMetadata: (logicalName: string) => ng.IPromise<XrmCommon.IEntityMetadata[]>;
@@ -305,6 +311,39 @@ module ngXrmServiceToolkit.Demo.ngApp.Services {
 					return Q.reject("An error occurred during the retrievePrincipalAccess request.");
 				});
 		}
+		soapGrantAccess(accessOptions: XrmCommon.AccessOptions): ng.IPromise<string> {
+			const self = this;
+			return self.ngXrmSoapSvc.grantAccess(accessOptions)
+				.then((rslt) => {
+					return rslt;
+				})
+				.catch((error) => {
+					console.log(error);
+					return Q.reject("An error occurred during the grantAccess request.");
+				});
+		}
+		soapModifyAccess(accessOptions: XrmCommon.AccessOptions): ng.IPromise<string> {
+			const self = this;
+			return self.ngXrmSoapSvc.modifyAccess(accessOptions)
+				.then((rslt) => {
+					return rslt;
+				})
+				.catch((error) => {
+					console.log(error);
+					return Q.reject("An error occurred during the modifyAccess request.");
+				});
+		}
+		soapRevokeAccess(accessOptions: XrmCommon.AccessOptions): ng.IPromise<string> {
+			const self = this;
+			return self.ngXrmSoapSvc.revokeAccess(accessOptions)
+				.then((rslt) => {
+					return rslt;
+				})
+				.catch((error) => {
+					console.log(error);
+					return Q.reject("An error occurred during the revokeAccess request.");
+				});
+		}
 		
 		soapAssociate(relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: XrmCommon.BusinessEntity[]): ng.IPromise<string> {
 			const self = this;
@@ -326,6 +365,29 @@ module ngXrmServiceToolkit.Demo.ngApp.Services {
 				.catch((error) => {
 					console.log(error);
 					return Q.reject("An error occurrred while deleting the association.");
+				});
+		}
+
+		soapAddMemberTeamRequest(teamId: string, memberId: string): ng.IPromise<any> {
+			const self = this;
+			return self.ngXrmSoapSvc.addMemberTeamRequest(teamId, memberId)
+				.then((rslt) => {
+					return rslt;
+				})
+				.catch((error) => {
+					console.log(error);
+					return Q.reject("An error occurrred while adding a member to the team.");
+				});
+		}
+		soapRemoveMemberTeamRequest(teamId: string, memberId: string): ng.IPromise<any> {
+			const self = this;
+			return self.ngXrmSoapSvc.removeMemberTeamRequest(teamId, memberId)
+				.then((rslt) => {
+					return rslt;
+				})
+				.catch((error) => {
+					console.log(error);
+					return Q.reject("An error occurrred while removing a member from the team.");
 				});
 		}
 

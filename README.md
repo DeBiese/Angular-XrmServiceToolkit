@@ -48,7 +48,12 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 	getCurrentUserRoles: () => ng.IPromise<string[]>;
 	isCurrentUserInRole: (args: string[]) => ng.IPromise<boolean>;
 	assign: (targetEntityName: string, targetId: string, assigneeEntityName: string, assigneeId: string) => ng.IPromise<string>;
+	grantAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
+	modifyAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;
+	revokeAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string>;	
 	retrievePrincipalAccess: (accessOptions: Common.AccessOptions) => ng.IPromise<string[]>;
+	addMemberTeamRequest: (teamId: string, memberId: string) => ng.IPromise<any>;
+	removeMemberTeamRequest: (teamId: string, memberId: string) => ng.IPromise<any>;
 	retrieveAllEntitiesMetadata: (entityFilters: string[], retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 	retrieveEntityMetadata: (entityFilters: string[], logicalName: string, retrieveIfPublished: boolean) => ng.IPromise<Common.IMetadata[]>;
 	retrieveAttributeMetadata: (entityLogicalName: string, attributeLogicalName: string, retrieveIfPublished: boolean) => ng.IPromise<any[]>;

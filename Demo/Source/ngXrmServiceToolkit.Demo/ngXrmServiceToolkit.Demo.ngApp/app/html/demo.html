@@ -38,9 +38,7 @@
                             <li><a ng-click="vm.soapAssignAccountToMe()">To Me</a></li>
                             <li><a ng-click="vm.soapAssignAccountToAnother()">To Another</a></li>
                         </ul>
-                    </li>
-                    <li class="divider"></li>
-                    <li><a ng-click="vm.soapRetrievePrincipalAccessAccount()">Retrieve Principal Access</a></li>
+                    </li>                  
                 </ul>
             </div>
             <div class="btn-group">
@@ -78,6 +76,36 @@
             </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Team <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.soapCreateTeam()">Create</a></li>
+                    <li><a ng-click="vm.soapDeleteTeam()">Delete</a></li>
+                    <li class="divider"></li>
+                    <li><a ng-click="vm.soapAddMemberTeam()">Add Member</a></li>
+                    <li><a ng-click="vm.soapRemoveMemberTeam()">Remove Member</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Access <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li class="dropdown-submenu">
+                        <a tabindex="-1">Retrieve Principal Acces</a>
+                        <ul class="dropdown-menu">
+                            <li><a ng-click="vm.soapRetrievePrincipalAccessAccountMe()">From Me</a></li>
+                            <li><a ng-click="vm.soapRetrievePrincipalAccessAccountTeam()">From Team</a></li>
+                        </ul>
+                    </li>
+                    <li class="divider"></li>
+                    <li><a ng-click="vm.soapGrantAccessToAccount()">Grant Team Access</a></li>
+                    <li><a ng-click="vm.soapModifyAccessToAccount()">Modify Team Access</a></li>
+                    <li><a ng-click="vm.soapRevokeAccessToAccount()">Revoke Team Access</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Metadata <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
@@ -97,6 +125,16 @@
         <div class="col-xs-6">
             <span>Demo contact:</span>
             <pre>{{ vm.demoSoapContact | json }}</pre>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <span>Demo team [Status: {{ vm.teamStatus() }}]:</span>
+            <pre>{{ vm.demoSoapTeam | json }}</pre>
+        </div>
+        <div class="col-xs-6">
+            <span>Sharing Action Results:</span>
+            <pre>{{ vm.demoSoapAccess | json }}</pre>
         </div>
     </div>
     <div class="row">
