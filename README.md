@@ -1,7 +1,7 @@
 ngXrmServiceToolkit
 ===================
 
-![NuGet](https://www.nuget.org/packages/ngXrmServiceToolkit/1.0.0)
+![NuGet download](https://www.nuget.org/packages/ngXrmServiceToolkit/1.0.0)
 
 A conversion of parts (SOAP and REST) of the existing [XrmServiceToolkit](https://xrmservicetoolkit.codeplex.com/) for usage in an AngularJS application inside Dynamics CRM 2015.
 The included demo (source code) contains an example of each of the available methods.
