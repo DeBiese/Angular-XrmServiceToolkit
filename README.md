@@ -1,6 +1,8 @@
 ngXrmServiceToolkit
 ===================
 
+![NuGet](https://www.nuget.org/packages/ngXrmServiceToolkit/1.0.0)
+
 A conversion of parts (SOAP and REST) of the existing [XrmServiceToolkit](https://xrmservicetoolkit.codeplex.com/) for usage in an AngularJS application inside Dynamics CRM 2015.
 The included demo (source code) contains an example of each of the available methods.
 Everything is written in Typescript, but the corresponding javascript is obviously also available. 
@@ -8,8 +10,11 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 ##Dependencies
 
  1. q(.min).js
- 2. [Q.d.ts]
- 3. [Xrm-2015.d.ts]
+ 2. bootbox(.min).js
+ 3. angular.d.ts
+ 4. bootbox.d.ts
+ 5. Q.d.ts
+ 6. Xrm-2015.d.ts
 
 ##Usage
 
