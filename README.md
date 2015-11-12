@@ -7,12 +7,11 @@ Everything is written in Typescript, but the corresponding javascript is obvious
 
 ##Dependencies
 
- 1. q(.min).js
- 2. bootbox(.min).js
+ 1. angular(.min).js
+ 2. q(.min).js
  3. angular.d.ts
- 4. bootbox.d.ts
- 5. Q.d.ts
- 6. Xrm-2015.d.ts
+ 4. Q.d.ts
+ 5. Xrm-2015.d.ts
 
 ## NuGet
 

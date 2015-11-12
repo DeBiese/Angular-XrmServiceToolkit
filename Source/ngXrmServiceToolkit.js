@@ -928,7 +928,7 @@ var ngXrm;
                             xmlDoc = parser.parseFromString(txt, "text/xml");
                         }
                         else {
-                            bootbox.alert("Cannot convert the XML string to a cross-browser XML object.");
+                            Common.Helper.alertMessage("Cannot convert the XML string to a cross-browser XML object.");
                         }
                     }
                     return xmlDoc;
