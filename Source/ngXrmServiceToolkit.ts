@@ -421,9 +421,22 @@ module ngXrm.XrmServiceToolkit.Common{
 									entRef = new XrmEntityReference();
 									entRef.type = sType.replace('a:', '');
 									let oChildNodes = tempNode.childNodes;
-									entRef.id = Helper.getNodeText(oChildNodes[0]);
-									entRef.logicalName = Helper.getNodeText(oChildNodes[1]);
-									entRef.name = Helper.getNodeText(oChildNodes[2]);
+									if (oChildNodes != null) {
+										for (let i: number = 0; i < oChildNodes.length; i++) {
+											let childType: string = oChildNodes[i].nodeName;
+											switch (childType) {
+												case "a:Id":
+													entRef.id = Helper.getNodeText(oChildNodes[i]);
+													break;
+												case "a:LogicalName":
+													entRef.logicalName = Helper.getNodeText(oChildNodes[i]);
+													break;
+												case "a:Name":
+													entRef.name = Helper.getNodeText(oChildNodes[i]);
+													break;
+											}
+										}
+									}																										
 									obj[sKey] = entRef;
 									break;
 
