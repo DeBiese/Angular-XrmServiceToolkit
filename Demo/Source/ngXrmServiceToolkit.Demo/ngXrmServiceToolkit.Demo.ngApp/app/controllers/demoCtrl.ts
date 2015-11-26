@@ -386,7 +386,7 @@ module ngXrmServiceToolkit.Demo.ngApp.Controllers {
 				});
 		}
 		soapRetrieveAccount(): void {
-			const self = this;
+			const self = this;			
 
 			if (!self.soapAccountExists()) {
 				bootbox.alert("An account has not yet been created. Try the create functionality before trying the retrieve again.");
