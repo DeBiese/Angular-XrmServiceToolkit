@@ -75,7 +75,14 @@ var ngXrmServiceToolkit;
                             "</request>"].join("");
                         return self.ngXrmSoapSvc.execute(request)
                             .then(function (rslt) {
-                            var whoamiId = rslt.getElementsByTagName("a:Results")[0].childNodes[0].childNodes[1].text;
+                            var whoamiId = '';
+                            try {
+                                whoamiId = rslt.getElementsByTagName("a:Results")[0].childNodes[0].childNodes[1].text;
+                            }
+                            catch (ex) {
+                                //Chrome
+                                whoamiId = rslt.childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent;
+                            }
                             return whoamiId;
                         })
                             .catch(function (error) {

@@ -43,6 +43,8 @@
  *		angular.module('myModule').factory('myService', ['ngXrmServiceToolkitSoap', function(ngXrmSoapSvc){}]);
  *	OR
  *		angular.module('myModule').factory('myService', ['ngXrmServiceToolkitRest', function(ngXrmRestSvc){}]);
+ * 
+ * Version : 1.0.3
  */
 module ngXrm.XrmServiceToolkit {
 
@@ -390,9 +392,12 @@ module ngXrm.XrmServiceToolkit.Common{
 							let tempParentNode = attr.childNodes[k];
 							// Establish the Key for the Attribute
 							let tempParentNodeChildNodes = tempParentNode.childNodes;
-							sKey = Helper.getNodeText(tempParentNodeChildNodes[0]);
+							//sKey = Helper.getNodeText(tempParentNodeChildNodes[0]);
+							sKey = Helper.getNodeText(Helper.selectSingleNode(tempParentNode, 'b:key'));
 
-							let tempNode = tempParentNodeChildNodes[1];
+							//let tempNode = tempParentNodeChildNodes[1];
+							let tempNode = Helper.selectSingleNode(tempParentNode, 'b:value');
+							
 							// Determine the Type of Attribute value we should expect
 							let sType = tempNode.attributes.getNamedItem("i:type").value;
 
@@ -446,17 +451,29 @@ module ngXrm.XrmServiceToolkit.Common{
 
 									//get all party items....
 									let items = [];
-									let partyNodes = tempNode.childNodes;
-									for (let y = 0, leny = partyNodes[0].childNodes.length; y < leny; y++) {
-										let itemNodes = tempParentNode.childNodes[1].childNodes[0].childNodes[y].childNodes[0].childNodes;
-										for (let z = 0, lenz = itemNodes.length; z < lenz; z++) {
-											let itemNodeChildNodes = itemNodes[z].childNodes;
-											let nodeText = Helper.getNodeText(itemNodeChildNodes[0]);
+									let entitiesNode = Helper.selectSingleNode(tempNode, 'a:Entities');
+									for (let y = 0, leny = entitiesNode.childNodes.length; y < leny; y++) {
+										let attributeNodes = Helper.selectSingleNode(entitiesNode.childNodes[y], 'a:Attributes').childNodes;
+										for (let z = 0, lenz = attributeNodes.length; z < lenz; z++) {
+											let nodeText = Helper.getNodeText(Helper.selectSingleNode(attributeNodes[z], 'b:key'));
 											if (nodeText === "partyid") {
+												let valueNode = Helper.selectSingleNode(attributeNodes[z], 'b:value');
 												let itemRef = new XrmEntityReference();
-												itemRef.id = Helper.getNodeText(itemNodeChildNodes[1].childNodes[0]);
-												itemRef.logicalName = Helper.getNodeText(itemNodeChildNodes[1].childNodes[1]);
-												itemRef.name = Helper.getNodeText(itemNodeChildNodes[1].childNodes[2]);
+												itemRef.type = "EntityReference";
+												for (let s: number = 0; s < valueNode.childNodes.length; s++) {
+													let childType: string = valueNode.childNodes[s].nodeName;
+													switch (childType) {
+														case "a:Id":
+															itemRef.id = Helper.getNodeText(valueNode.childNodes[s]);
+															break;
+														case "a:LogicalName":
+															itemRef.logicalName = Helper.getNodeText(valueNode.childNodes[s]);
+															break;
+														case "a:Name":
+															itemRef.name = Helper.getNodeText(valueNode.childNodes[s]);
+															break;
+													}
+												}
 												items[y] = itemRef;
 											}
 										}
@@ -511,8 +528,10 @@ module ngXrm.XrmServiceToolkit.Common{
 						for (let o = 0, leno = foVal.childNodes.length; o < leno; o++) {
 							// Establish the Key, we are going to fill in the formatted value of the already found attribute
 							let foNode: Node = foVal.childNodes[o];
-							sKey = Helper.getNodeText(foNode.childNodes[0]);
-							this.attributes[sKey].formattedValue = Helper.getNodeText(foNode.childNodes[1]);
+							//sKey = Helper.getNodeText(foNode.childNodes[0]);
+							sKey = Helper.getNodeText(Helper.selectSingleNode(foNode, 'b:key'));
+							//this.attributes[sKey].formattedValue = Helper.getNodeText(foNode.childNodes[1]);
+							this.attributes[sKey].formattedValue = Helper.getNodeText(Helper.selectSingleNode(foNode, 'b:value'));
 							if (isNaN(this.attributes[sKey].value) && this.attributes[sKey].type === "dateTime") {
 								this.attributes[sKey].value = new Date(this.attributes[sKey].formattedValue);
 							}
@@ -527,7 +546,15 @@ module ngXrm.XrmServiceToolkit.Common{
 		private static clientBaseUrl: string = '';
 
 		static alertMessage(message: string): void {
-			(Xrm.Utility !== undefined && Xrm.Utility.alertDialog !== undefined) ? Xrm.Utility.alertDialog(message) : alert(message);
+			let xrmFw: Xrm = null;
+			try {
+				xrmFw = Helper.xrmFramework();
+				if (xrmFw != null) {
+					(xrmFw.Utility !== undefined && xrmFw.Utility.alertDialog !== undefined) ? xrmFw.Utility.alertDialog(message) : alert(message);
+				}
+			} catch (ex) {
+				alert(message);
+			}			
 		}
 
 		static crmXmlDecode(s: any): string {
@@ -656,6 +683,14 @@ module ngXrm.XrmServiceToolkit.Common{
 			return input.constructor.toString().indexOf("Array") !== -1;
 		}
 
+		static isNodeNull(node: Node): boolean {
+			if (node == null)
+			{ return true; }
+			if ((node.attributes.getNamedItem("i:nil") != null) && (node.attributes.getNamedItem("i:nil").value === "true"))
+			{ return true; }
+			return false;
+		}
+
 		static joinArray(prefix: any, array: any[], suffix: any): string {
 			let output: any[] = [];
 			for (let i = 0, ilength = array.length; i < ilength; i++) {
@@ -691,12 +726,66 @@ module ngXrm.XrmServiceToolkit.Common{
 			return output.join("");
 		}
 
+		static nsResolver(prefix: string): string {
+			let ns = {
+				"s": "http://schemas.xmlsoap.org/soap/envelope/",
+				"a": "http://schemas.microsoft.com/xrm/2011/Contracts",
+				"i": "http://www.w3.org/2001/XMLSchema-instance",
+				"b": "http://schemas.datacontract.org/2004/07/System.Collections.Generic",
+				"c": "http://schemas.microsoft.com/xrm/2011/Metadata",
+				"ser": "http://schemas.microsoft.com/xrm/2011/Contracts/Services"
+			};
+			return ns[prefix] || null;
+		}
+
 		static padNumber(s: any, len: number = 2): string {
 			s = '' + s;
 			while (s.length < len) {
 				s = "0" + s;
 			}
 			return s;
+		}		
+
+		static selectNodes(node: any, xPathExpression: string): any[] {
+			const self = this;
+			if (typeof (node.selectNodes) != "undefined") {
+				return node.selectNodes(xPathExpression);
+			}
+			else {
+				let output = [];
+				let xPathResults = node.evaluate(xPathExpression, node, Helper.nsResolver, XPathResult.ANY_TYPE, null);
+				let result = xPathResults.iterateNext();
+				while (result) {
+					output.push(result);
+					result = xPathResults.iterateNext();
+				}
+				return output;
+			}
+		}
+
+		static selectSingleNode(node: any, xpathExpr: string): Node {
+			const self = this;
+			if (typeof (node.selectSingleNode) != "undefined") {
+				return node.selectSingleNode(xpathExpr);
+			}
+			else {
+				let xpe = new XPathEvaluator();
+				let results = xpe.evaluate(xpathExpr, node, { lookupNamespaceURI: Helper.nsResolver }, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+				return results.singleNodeValue;
+			}
+		}
+
+		static selectSingleNodeText(node: any, xpathExpr: string): string {
+			const self = this;
+			let x: Node = Helper.selectSingleNode(node, xpathExpr);
+			if (Helper.isNodeNull(x))
+			{ return null; }
+			if (typeof ((<any>x).text) != "undefined") {
+				return (<any>x).text;
+			}
+			else {
+				return x.textContent;
+			}
 		}
 
 		/*
@@ -710,6 +799,23 @@ module ngXrm.XrmServiceToolkit.Common{
 		static stringToDate(s: string): Date {
 			let b: any = s.split(/\D/);
 			return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5]));
+		}
+
+		static xrmFramework(): Xrm {
+			let xrm: Xrm;
+			let fnWindow: any = window;
+			let fnParentWindow: any = window.parent;
+
+			if (typeof Xrm != "undefined") {
+				xrm = Xrm;
+			}
+			else if (typeof fnParentWindow.Xrm != "undefined") {
+				xrm = fnParentWindow.Xrm;
+			}
+			else {
+				throw new Error("Xrm is not available.");
+			}
+			return xrm;
 		}
 
 		static xrmContext(): Context {
@@ -730,14 +836,10 @@ module ngXrm.XrmServiceToolkit.Common{
 					oContext = GetGlobalContext();
 				}
 				else {
-					let fnParentWindow: any = window.parent;
-					if (typeof Xrm != "undefined") {
-						oContext = Xrm.Page.context;
-					}
-					else if (typeof fnParentWindow.Xrm != "undefined") {
-						oContext = fnParentWindow.Xrm.Page.context;
-					}
-					else {
+
+					try {
+						oContext = Helper.xrmFramework().Page.context;
+					} catch(ex){
 						throw new Error("Context is not available.");
 					}
 				}
@@ -1008,7 +1110,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 		// Helper Methods
 		//***************
 
-		__isMetadataArray(elementName: string): boolean {
+		private __isMetadataArray(elementName: string): boolean {
 			const self = this;
 			for (let i = 0, ilength = self.arrayElements.length; i < ilength; i++) {
 				if (elementName === self.arrayElements[i]) {
@@ -1018,27 +1120,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			return false;
 		}
 
-		__isNodeNull(node: Node): boolean {
-			if (node == null)
-			{ return true; }
-			if ((node.attributes.getNamedItem("i:nil") != null) && (node.attributes.getNamedItem("i:nil").value === "true"))
-			{ return true; }
-			return false;
-		}
-
-		__nsResolver(prefix: string): string {
-			let ns = {
-				"s": "http://schemas.xmlsoap.org/soap/envelope/",
-				"a": "http://schemas.microsoft.com/xrm/2011/Contracts",
-				"i": "http://www.w3.org/2001/XMLSchema-instance",
-				"b": "http://schemas.datacontract.org/2004/07/System.Collections.Generic",
-				"c": "http://schemas.microsoft.com/xrm/2011/Metadata",
-				"ser": "http://schemas.microsoft.com/xrm/2011/Contracts/Services"
-			};
-			return ns[prefix] || null;
-		}
-
-		__objectifyNode(node: Node): any {
+		private __objectifyNode(node: Node): any {
 			const self = this;
 			//Check for null
 			if (node.attributes != null && node.attributes.length === 1) {
@@ -1172,7 +1254,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			return c;
 		}
 
-		__orgServicePath(xrmContext: Context): string {
+		private __orgServicePath(xrmContext: Context): string {
 			///<summary>
 			/// Private function to return the path to the organization service.
 			///</summary>
@@ -1181,49 +1263,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			return [xrmContext.getClientUrl(), "/XRMServices/2011/Organization.svc/web"].join("");
 		}
 
-		__selectNodes(node: any, xPathExpression: string): any[] {
-			const self = this;
-			if (typeof (node.selectNodes) != "undefined") {
-				return node.selectNodes(xPathExpression);
-			}
-			else {
-				let output = [];
-				let xPathResults = node.evaluate(xPathExpression, node, self.__nsResolver, XPathResult.ANY_TYPE, null);
-				let result = xPathResults.iterateNext();
-				while (result) {
-					output.push(result);
-					result = xPathResults.iterateNext();
-				}
-				return output;
-			}
-		}
-
-		__selectSingleNode(node: any, xpathExpr: string): Node {
-			const self = this;
-			if (typeof (node.selectSingleNode) != "undefined") {
-				return node.selectSingleNode(xpathExpr);
-			}
-			else {
-				let xpe = new XPathEvaluator();
-				let results = xpe.evaluate(xpathExpr, node, { lookupNamespaceURI: self.__nsResolver }, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-				return results.singleNodeValue;
-			}
-		}
-
-		__selectSingleNodeText(node: any, xpathExpr: string): string {
-			const self = this;
-			let x: Node = self.__selectSingleNode(node, xpathExpr);
-			if (self.__isNodeNull(x))
-			{ return null; }
-			if (typeof ((<any>x).text) != "undefined") {
-				return (<any>x).text;
-			}
-			else {
-				return x.textContent;
-			}
-		}
-
-		__setSelectionNamespaces(doc: any): void {
+		private __setSelectionNamespaces(doc: any): void {
 			let namespaces = [
 				"xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'",
 				"xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts'",
@@ -1235,31 +1275,45 @@ module ngXrm.XrmServiceToolkit.Soap {
 			doc.setProperty("SelectionNamespaces", namespaces.join(" "));
 		}
 
-		__xmlParser(txt: string): any {
+		private __xmlParser(txt: string): any {
 			///<summary>
 			/// cross browser responseXml to return a XML object
 			///</summary>
 			let xmlDoc: any = null;
-			let fnWindow: any = Window;
+			//let fnWindow: any = Window;
+			//try {
+			//	xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+			//	xmlDoc.async = false;
+			//	xmlDoc.loadXML(txt);
+			//} catch (e) {
+			//	if (fnWindow.DOMParser) {
+			//		// ReSharper disable InconsistentNaming
+			//		let parser = new DOMParser();
+			//		// ReSharper restore InconsistentNaming
+			//		xmlDoc = parser.parseFromString(txt, "text/xml");
+			//	} else {
+			//		Common.Helper.alertMessage("Cannot convert the XML string to a cross-browser XML object.");
+			//	}
+			//}
+
+			//return xmlDoc;
+
 			try {
 				xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
 				xmlDoc.async = false;
 				xmlDoc.loadXML(txt);
 			} catch (e) {
-				if (fnWindow.DOMParser) {
-					// ReSharper disable InconsistentNaming
-					let parser = new DOMParser();
-					// ReSharper restore InconsistentNaming
-					xmlDoc = parser.parseFromString(txt, "text/xml");
-				} else {
+				try {
+					xmlDoc = (new DOMParser()).parseFromString(txt, "text/xml");
+				} catch (e) {
 					Common.Helper.alertMessage("Cannot convert the XML string to a cross-browser XML object.");
-				}
+				}				
 			}
-
+			
 			return xmlDoc;
 		}
 
-		__xmlToString(responseXml: any): string {
+		private __xmlToString(responseXml: any): string {
 			const self = this;
 			let xmlString: string = '';
 			try {
@@ -1360,7 +1414,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 					"</request>"].join("");
 
 			return self._doRequest(mBody, "Execute").then((rslt) => {
-				let response = self.__selectSingleNodeText(rslt, "//b:value");
+				let response = Common.Helper.selectSingleNodeText(rslt, "//b:value");
 				let result = Common.Helper.crmXmlDecode(response);
 
 				return result;
@@ -1393,7 +1447,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 					"</request>"].join("");
 
 			return self._doRequest(mBody, "Execute").then((rslt) => {
-				let response : string = self.__selectSingleNodeText(rslt, "//a:Results");
+				let response: string = Common.Helper.selectSingleNodeText(rslt, "//a:Results");
 				let result : string = Common.Helper.crmXmlDecode(response);
 
 				return result;
@@ -1423,7 +1477,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let response = self.__selectSingleNodeText(rslt, "//a:Results");
+				let response = Common.Helper.selectSingleNodeText(rslt, "//a:Results");
 				let result = Common.Helper.crmXmlDecode(response);
 
 				return result;
@@ -1534,7 +1588,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 					? fetchCore.substring(fetchCore.indexOf("distinct=") + 10, fetchCore.indexOf(valQuotes, fetchCore.indexOf("distinct=") + 10))
 					: "false";
 				let xmlDoc: string = self.__xmlParser(fetchCore);
-				let fetchEntity: Node = self.__selectSingleNode(xmlDoc, "//entity");
+				let fetchEntity: Node = Common.Helper.selectSingleNode(xmlDoc, "//entity");
 				if (fetchEntity === null) {
 					Q.reject("XrmServiceToolkit.Fetch: No 'entity' node in the provided FetchXML.");
 				}
@@ -1565,8 +1619,8 @@ module ngXrm.XrmServiceToolkit.Soap {
 			let recursiveFn = function (rslt: any) {
 				//TODO: test when rslt has no records
 				if (rslt != null) {
-					let fetchResult: Node = self.__selectSingleNode(rslt, "//a:Entities");
-					let moreRecords: boolean = (self.__selectSingleNodeText(rslt, "//a:MoreRecords") === "true");
+					let fetchResult: Node = Common.Helper.selectSingleNode(rslt, "//a:Entities");
+					let moreRecords: boolean = (Common.Helper.selectSingleNodeText(rslt, "//a:MoreRecords") === "true");
 
 					if (fetchResult != null) {
 						for (let ii = 0, olength = fetchResult.childNodes.length; ii < olength; ii++) {
@@ -1577,7 +1631,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 						}
 
 						if (fetchAll && moreRecords && (maxFetchRecords === -1 || resultArray.length <= maxFetchRecords)) {
-							let pageCookie = self.__selectSingleNodeText(rslt, "//a:PagingCookie").replace(/\"/g, '\'').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&quot;');
+							let pageCookie = Common.Helper.selectSingleNodeText(rslt, "//a:PagingCookie").replace(/\"/g, '\'').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&quot;');
 							pageNumber += 1;
 							self._doFetch(fetchCore, pageNumber, pageCookie)
 								.then(recursiveFn)
@@ -1659,7 +1713,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				].join("");
 
 			return self._doRequest(msgBody, "Execute").then((rslt) => {
-				let retrieveResult: Node = self.__selectSingleNode(rslt, "//b:value");
+				let retrieveResult: Node = Common.Helper.selectSingleNode(rslt, "//b:value");
 				let entity: Common.BusinessEntity = new Common.BusinessEntity();
 				entity.deserialize(retrieveResult);
 
@@ -1694,7 +1748,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let resultNodes: Node = self.__selectSingleNode(rslt, "//a:Entities");
+				let resultNodes: Node = Common.Helper.selectSingleNode(rslt, "//a:Entities");
 				let retriveMultipleResults: Common.BusinessEntity[] = [];
 
 				for (let i = 0, ilength = resultNodes.childNodes.length; i < ilength; i++) {
@@ -1849,7 +1903,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let responseText: string = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
 				let result: string = Common.Helper.crmXmlDecode(responseText);
 				return result;
 
@@ -1929,7 +1983,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let responseText: string = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
 				let result: string = Common.Helper.crmXmlDecode(responseText);
 				return result;
 			});
@@ -2008,7 +2062,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let responseText: string = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
 				let result: string = Common.Helper.crmXmlDecode(responseText);
 				return result;
 			});
@@ -2033,7 +2087,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 			].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				return Common.Helper.getNodeText(self.__selectNodes(rslt, "//b:value")[0]);
+				return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[0]);
 			});
 		}
 
@@ -2050,7 +2104,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"<a:RequestName>WhoAmI</a:RequestName>",
 				"</request>"].join("");
 			return self._doRequest(request, "Execute").then((rslt) => {
-				return Common.Helper.getNodeText(self.__selectNodes(rslt, "//b:value")[1]);
+				return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[1]);
 			});
 		}
 
@@ -2165,7 +2219,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let responseText: string = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
 				let result: string = Common.Helper.crmXmlDecode(responseText);
 				return result;
 			});
@@ -2231,7 +2285,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let responseText: string = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
 				let result: string = Common.Helper.crmXmlDecode(responseText);
 				return result;
 			});
@@ -2297,7 +2351,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let responseText: string = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
 				let result: string = Common.Helper.crmXmlDecode(responseText);
 				return result;
 			});
@@ -2356,7 +2410,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let responseText: string = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+				let responseText: string = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
 				let result: string = Common.Helper.crmXmlDecode(responseText);
 				return result;
 			});
@@ -2412,7 +2466,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let result: string = self.__selectSingleNodeText(rslt, "//b:value");
+				let result: string = Common.Helper.selectSingleNodeText(rslt, "//b:value");
 				return result.split(' ');
 			});
 		}
@@ -2538,7 +2592,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let response = self.__selectNodes(rslt, "//c:EntityMetadata");
+				let response = Common.Helper.selectNodes(rslt, "//c:EntityMetadata");
 				for (let i = 0, ilength = response.length; i < ilength; i++) {
 					let a: Common.IMetadata = self.__objectifyNode(response[i]);
 					a._type = "EntityMetadata";
@@ -2597,7 +2651,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let response: any[] = self.__selectNodes(rslt, "//b:value");
+				let response: any[] = Common.Helper.selectNodes(rslt, "//b:value");
 
 				let results: Common.IMetadata[] = [];
 				for (let i = 0, ilength = response.length; i < ilength; i++) {
@@ -2652,7 +2706,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 				"</request>"].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				let response: any[] = self.__selectNodes(rslt, "//b:value");
+				let response: any[] = Common.Helper.selectNodes(rslt, "//b:value");
 				let results: any[] = [];
 				for (let i = 0, ilength = response.length; i < ilength; i++) {
 					let a = self.__objectifyNode(response[i]);

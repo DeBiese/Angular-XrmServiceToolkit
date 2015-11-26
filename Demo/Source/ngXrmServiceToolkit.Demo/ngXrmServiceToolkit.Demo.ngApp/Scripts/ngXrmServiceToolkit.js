@@ -171,8 +171,10 @@ var ngXrm;
                                     var tempParentNode = attr.childNodes[k];
                                     // Establish the Key for the Attribute
                                     var tempParentNodeChildNodes = tempParentNode.childNodes;
-                                    sKey = Helper.getNodeText(tempParentNodeChildNodes[0]);
-                                    var tempNode = tempParentNodeChildNodes[1];
+                                    //sKey = Helper.getNodeText(tempParentNodeChildNodes[0]);
+                                    sKey = Helper.getNodeText(Helper.selectSingleNode(tempParentNode, 'b:key'));
+                                    //let tempNode = tempParentNodeChildNodes[1];
+                                    var tempNode = Helper.selectSingleNode(tempParentNode, 'b:value');
                                     // Determine the Type of Attribute value we should expect
                                     var sType = tempNode.attributes.getNamedItem("i:type").value;
                                     // check for AliasedValue
@@ -220,17 +222,29 @@ var ngXrm;
                                             entRef.type = sType.replace('a:', '');
                                             //get all party items....
                                             var items = [];
-                                            var partyNodes = tempNode.childNodes;
-                                            for (var y = 0, leny = partyNodes[0].childNodes.length; y < leny; y++) {
-                                                var itemNodes = tempParentNode.childNodes[1].childNodes[0].childNodes[y].childNodes[0].childNodes;
-                                                for (var z = 0, lenz = itemNodes.length; z < lenz; z++) {
-                                                    var itemNodeChildNodes = itemNodes[z].childNodes;
-                                                    var nodeText = Helper.getNodeText(itemNodeChildNodes[0]);
+                                            var entitiesNode = Helper.selectSingleNode(tempNode, 'a:Entities');
+                                            for (var y = 0, leny = entitiesNode.childNodes.length; y < leny; y++) {
+                                                var attributeNodes = Helper.selectSingleNode(entitiesNode.childNodes[y], 'a:Attributes').childNodes;
+                                                for (var z = 0, lenz = attributeNodes.length; z < lenz; z++) {
+                                                    var nodeText = Helper.getNodeText(Helper.selectSingleNode(attributeNodes[z], 'b:key'));
                                                     if (nodeText === "partyid") {
+                                                        var valueNode = Helper.selectSingleNode(attributeNodes[z], 'b:value');
                                                         var itemRef = new XrmEntityReference();
-                                                        itemRef.id = Helper.getNodeText(itemNodeChildNodes[1].childNodes[0]);
-                                                        itemRef.logicalName = Helper.getNodeText(itemNodeChildNodes[1].childNodes[1]);
-                                                        itemRef.name = Helper.getNodeText(itemNodeChildNodes[1].childNodes[2]);
+                                                        itemRef.type = "EntityReference";
+                                                        for (var s = 0; s < valueNode.childNodes.length; s++) {
+                                                            var childType = valueNode.childNodes[s].nodeName;
+                                                            switch (childType) {
+                                                                case "a:Id":
+                                                                    itemRef.id = Helper.getNodeText(valueNode.childNodes[s]);
+                                                                    break;
+                                                                case "a:LogicalName":
+                                                                    itemRef.logicalName = Helper.getNodeText(valueNode.childNodes[s]);
+                                                                    break;
+                                                                case "a:Name":
+                                                                    itemRef.name = Helper.getNodeText(valueNode.childNodes[s]);
+                                                                    break;
+                                                            }
+                                                        }
                                                         items[y] = itemRef;
                                                     }
                                                 }
@@ -279,8 +293,10 @@ var ngXrm;
                                 for (var o = 0, leno = foVal.childNodes.length; o < leno; o++) {
                                     // Establish the Key, we are going to fill in the formatted value of the already found attribute
                                     var foNode = foVal.childNodes[o];
-                                    sKey = Helper.getNodeText(foNode.childNodes[0]);
-                                    this.attributes[sKey].formattedValue = Helper.getNodeText(foNode.childNodes[1]);
+                                    //sKey = Helper.getNodeText(foNode.childNodes[0]);
+                                    sKey = Helper.getNodeText(Helper.selectSingleNode(foNode, 'b:key'));
+                                    //this.attributes[sKey].formattedValue = Helper.getNodeText(foNode.childNodes[1]);
+                                    this.attributes[sKey].formattedValue = Helper.getNodeText(Helper.selectSingleNode(foNode, 'b:value'));
                                     if (isNaN(this.attributes[sKey].value) && this.attributes[sKey].type === "dateTime") {
                                         this.attributes[sKey].value = new Date(this.attributes[sKey].formattedValue);
                                     }
@@ -296,7 +312,16 @@ var ngXrm;
                 function Helper() {
                 }
                 Helper.alertMessage = function (message) {
-                    (Xrm.Utility !== undefined && Xrm.Utility.alertDialog !== undefined) ? Xrm.Utility.alertDialog(message) : alert(message);
+                    var xrmFw = null;
+                    try {
+                        xrmFw = Helper.xrmFramework();
+                        if (xrmFw != null) {
+                            (xrmFw.Utility !== undefined && xrmFw.Utility.alertDialog !== undefined) ? xrmFw.Utility.alertDialog(message) : alert(message);
+                        }
+                    }
+                    catch (ex) {
+                        alert(message);
+                    }
                 };
                 Helper.crmXmlDecode = function (s) {
                     if ('undefined' === typeof s || 'unknown' === typeof s || null === s)
@@ -425,6 +450,15 @@ var ngXrm;
                 Helper.isArray = function (input) {
                     return input.constructor.toString().indexOf("Array") !== -1;
                 };
+                Helper.isNodeNull = function (node) {
+                    if (node == null) {
+                        return true;
+                    }
+                    if ((node.attributes.getNamedItem("i:nil") != null) && (node.attributes.getNamedItem("i:nil").value === "true")) {
+                        return true;
+                    }
+                    return false;
+                };
                 Helper.joinArray = function (prefix, array, suffix) {
                     var output = [];
                     for (var i = 0, ilength = array.length; i < ilength; i++) {
@@ -456,6 +490,17 @@ var ngXrm;
                     }
                     return output.join("");
                 };
+                Helper.nsResolver = function (prefix) {
+                    var ns = {
+                        "s": "http://schemas.xmlsoap.org/soap/envelope/",
+                        "a": "http://schemas.microsoft.com/xrm/2011/Contracts",
+                        "i": "http://www.w3.org/2001/XMLSchema-instance",
+                        "b": "http://schemas.datacontract.org/2004/07/System.Collections.Generic",
+                        "c": "http://schemas.microsoft.com/xrm/2011/Metadata",
+                        "ser": "http://schemas.microsoft.com/xrm/2011/Contracts/Services"
+                    };
+                    return ns[prefix] || null;
+                };
                 Helper.padNumber = function (s, len) {
                     if (len === void 0) { len = 2; }
                     s = '' + s;
@@ -463,6 +508,46 @@ var ngXrm;
                         s = "0" + s;
                     }
                     return s;
+                };
+                Helper.selectNodes = function (node, xPathExpression) {
+                    var self = this;
+                    if (typeof (node.selectNodes) != "undefined") {
+                        return node.selectNodes(xPathExpression);
+                    }
+                    else {
+                        var output = [];
+                        var xPathResults = node.evaluate(xPathExpression, node, Helper.nsResolver, XPathResult.ANY_TYPE, null);
+                        var result = xPathResults.iterateNext();
+                        while (result) {
+                            output.push(result);
+                            result = xPathResults.iterateNext();
+                        }
+                        return output;
+                    }
+                };
+                Helper.selectSingleNode = function (node, xpathExpr) {
+                    var self = this;
+                    if (typeof (node.selectSingleNode) != "undefined") {
+                        return node.selectSingleNode(xpathExpr);
+                    }
+                    else {
+                        var xpe = new XPathEvaluator();
+                        var results = xpe.evaluate(xpathExpr, node, { lookupNamespaceURI: Helper.nsResolver }, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+                        return results.singleNodeValue;
+                    }
+                };
+                Helper.selectSingleNodeText = function (node, xpathExpr) {
+                    var self = this;
+                    var x = Helper.selectSingleNode(node, xpathExpr);
+                    if (Helper.isNodeNull(x)) {
+                        return null;
+                    }
+                    if (typeof (x.text) != "undefined") {
+                        return x.text;
+                    }
+                    else {
+                        return x.textContent;
+                    }
                 };
                 /*
                  * setClientUrl :
@@ -474,6 +559,21 @@ var ngXrm;
                 Helper.stringToDate = function (s) {
                     var b = s.split(/\D/);
                     return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5]));
+                };
+                Helper.xrmFramework = function () {
+                    var xrm;
+                    var fnWindow = window;
+                    var fnParentWindow = window.parent;
+                    if (typeof Xrm != "undefined") {
+                        xrm = Xrm;
+                    }
+                    else if (typeof fnParentWindow.Xrm != "undefined") {
+                        xrm = fnParentWindow.Xrm;
+                    }
+                    else {
+                        throw new Error("Xrm is not available.");
+                    }
+                    return xrm;
                 };
                 Helper.xrmContext = function () {
                     ///<summary>
@@ -490,14 +590,10 @@ var ngXrm;
                             oContext = GetGlobalContext();
                         }
                         else {
-                            var fnParentWindow = window.parent;
-                            if (typeof Xrm != "undefined") {
-                                oContext = Xrm.Page.context;
+                            try {
+                                oContext = Helper.xrmFramework().Page.context;
                             }
-                            else if (typeof fnParentWindow.Xrm != "undefined") {
-                                oContext = fnParentWindow.Xrm.Page.context;
-                            }
-                            else {
+                            catch (ex) {
                                 throw new Error("Context is not available.");
                             }
                         }
@@ -723,26 +819,6 @@ var ngXrm;
                     }
                     return false;
                 };
-                SoapClient.prototype.__isNodeNull = function (node) {
-                    if (node == null) {
-                        return true;
-                    }
-                    if ((node.attributes.getNamedItem("i:nil") != null) && (node.attributes.getNamedItem("i:nil").value === "true")) {
-                        return true;
-                    }
-                    return false;
-                };
-                SoapClient.prototype.__nsResolver = function (prefix) {
-                    var ns = {
-                        "s": "http://schemas.xmlsoap.org/soap/envelope/",
-                        "a": "http://schemas.microsoft.com/xrm/2011/Contracts",
-                        "i": "http://www.w3.org/2001/XMLSchema-instance",
-                        "b": "http://schemas.datacontract.org/2004/07/System.Collections.Generic",
-                        "c": "http://schemas.microsoft.com/xrm/2011/Metadata",
-                        "ser": "http://schemas.microsoft.com/xrm/2011/Contracts/Services"
-                    };
-                    return ns[prefix] || null;
-                };
                 SoapClient.prototype.__objectifyNode = function (node) {
                     var self = this;
                     //Check for null
@@ -871,46 +947,6 @@ var ngXrm;
                     var self = this;
                     return [xrmContext.getClientUrl(), "/XRMServices/2011/Organization.svc/web"].join("");
                 };
-                SoapClient.prototype.__selectNodes = function (node, xPathExpression) {
-                    var self = this;
-                    if (typeof (node.selectNodes) != "undefined") {
-                        return node.selectNodes(xPathExpression);
-                    }
-                    else {
-                        var output = [];
-                        var xPathResults = node.evaluate(xPathExpression, node, self.__nsResolver, XPathResult.ANY_TYPE, null);
-                        var result = xPathResults.iterateNext();
-                        while (result) {
-                            output.push(result);
-                            result = xPathResults.iterateNext();
-                        }
-                        return output;
-                    }
-                };
-                SoapClient.prototype.__selectSingleNode = function (node, xpathExpr) {
-                    var self = this;
-                    if (typeof (node.selectSingleNode) != "undefined") {
-                        return node.selectSingleNode(xpathExpr);
-                    }
-                    else {
-                        var xpe = new XPathEvaluator();
-                        var results = xpe.evaluate(xpathExpr, node, { lookupNamespaceURI: self.__nsResolver }, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-                        return results.singleNodeValue;
-                    }
-                };
-                SoapClient.prototype.__selectSingleNodeText = function (node, xpathExpr) {
-                    var self = this;
-                    var x = self.__selectSingleNode(node, xpathExpr);
-                    if (self.__isNodeNull(x)) {
-                        return null;
-                    }
-                    if (typeof (x.text) != "undefined") {
-                        return x.text;
-                    }
-                    else {
-                        return x.textContent;
-                    }
-                };
                 SoapClient.prototype.__setSelectionNamespaces = function (doc) {
                     var namespaces = [
                         "xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'",
@@ -927,20 +963,32 @@ var ngXrm;
                     /// cross browser responseXml to return a XML object
                     ///</summary>
                     var xmlDoc = null;
-                    var fnWindow = Window;
+                    //let fnWindow: any = Window;
+                    //try {
+                    //	xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+                    //	xmlDoc.async = false;
+                    //	xmlDoc.loadXML(txt);
+                    //} catch (e) {
+                    //	if (fnWindow.DOMParser) {
+                    //		// ReSharper disable InconsistentNaming
+                    //		let parser = new DOMParser();
+                    //		// ReSharper restore InconsistentNaming
+                    //		xmlDoc = parser.parseFromString(txt, "text/xml");
+                    //	} else {
+                    //		Common.Helper.alertMessage("Cannot convert the XML string to a cross-browser XML object.");
+                    //	}
+                    //}
+                    //return xmlDoc;
                     try {
                         xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
                         xmlDoc.async = false;
                         xmlDoc.loadXML(txt);
                     }
                     catch (e) {
-                        if (fnWindow.DOMParser) {
-                            // ReSharper disable InconsistentNaming
-                            var parser = new DOMParser();
-                            // ReSharper restore InconsistentNaming
-                            xmlDoc = parser.parseFromString(txt, "text/xml");
+                        try {
+                            xmlDoc = (new DOMParser()).parseFromString(txt, "text/xml");
                         }
-                        else {
+                        catch (e) {
                             Common.Helper.alertMessage("Cannot convert the XML string to a cross-browser XML object.");
                         }
                     }
@@ -1034,7 +1082,7 @@ var ngXrm;
                         "<a:RequestName>Create</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(mBody, "Execute").then(function (rslt) {
-                        var response = self.__selectSingleNodeText(rslt, "//b:value");
+                        var response = Common.Helper.selectSingleNodeText(rslt, "//b:value");
                         var result = Common.Helper.crmXmlDecode(response);
                         return result;
                     });
@@ -1062,7 +1110,7 @@ var ngXrm;
                         "<a:RequestName>Update</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(mBody, "Execute").then(function (rslt) {
-                        var response = self.__selectSingleNodeText(rslt, "//a:Results");
+                        var response = Common.Helper.selectSingleNodeText(rslt, "//a:Results");
                         var result = Common.Helper.crmXmlDecode(response);
                         return result;
                     });
@@ -1088,7 +1136,7 @@ var ngXrm;
                         entityName, "</a:LogicalName><a:Name i:nil='true' /></b:value></a:KeyValuePairOfstringanyType></a:Parameters><a:RequestId i:nil='true' /><a:RequestName>Delete</a:RequestName></request>"
                     ].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var response = self.__selectSingleNodeText(rslt, "//a:Results");
+                        var response = Common.Helper.selectSingleNodeText(rslt, "//a:Results");
                         var result = Common.Helper.crmXmlDecode(response);
                         return result;
                     });
@@ -1186,7 +1234,7 @@ var ngXrm;
                             ? fetchCore.substring(fetchCore.indexOf("distinct=") + 10, fetchCore.indexOf(valQuotes, fetchCore.indexOf("distinct=") + 10))
                             : "false";
                         var xmlDoc = self.__xmlParser(fetchCore);
-                        var fetchEntity = self.__selectSingleNode(xmlDoc, "//entity");
+                        var fetchEntity = Common.Helper.selectSingleNode(xmlDoc, "//entity");
                         if (fetchEntity === null) {
                             Q.reject("XrmServiceToolkit.Fetch: No 'entity' node in the provided FetchXML.");
                         }
@@ -1216,8 +1264,8 @@ var ngXrm;
                     var recursiveFn = function (rslt) {
                         //TODO: test when rslt has no records
                         if (rslt != null) {
-                            var fetchResult = self.__selectSingleNode(rslt, "//a:Entities");
-                            var moreRecords = (self.__selectSingleNodeText(rslt, "//a:MoreRecords") === "true");
+                            var fetchResult = Common.Helper.selectSingleNode(rslt, "//a:Entities");
+                            var moreRecords = (Common.Helper.selectSingleNodeText(rslt, "//a:MoreRecords") === "true");
                             if (fetchResult != null) {
                                 for (var ii = 0, olength = fetchResult.childNodes.length; ii < olength; ii++) {
                                     var entity = new Common.BusinessEntity();
@@ -1225,7 +1273,7 @@ var ngXrm;
                                     resultArray.push(entity);
                                 }
                                 if (fetchAll && moreRecords && (maxFetchRecords === -1 || resultArray.length <= maxFetchRecords)) {
-                                    var pageCookie = self.__selectSingleNodeText(rslt, "//a:PagingCookie").replace(/\"/g, '\'').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&quot;');
+                                    var pageCookie = Common.Helper.selectSingleNodeText(rslt, "//a:PagingCookie").replace(/\"/g, '\'').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&quot;');
                                     pageNumber += 1;
                                     self._doFetch(fetchCore, pageNumber, pageCookie)
                                         .then(recursiveFn)
@@ -1301,7 +1349,7 @@ var ngXrm;
                         "</request>"
                     ].join("");
                     return self._doRequest(msgBody, "Execute").then(function (rslt) {
-                        var retrieveResult = self.__selectSingleNode(rslt, "//b:value");
+                        var retrieveResult = Common.Helper.selectSingleNode(rslt, "//b:value");
                         var entity = new Common.BusinessEntity();
                         entity.deserialize(retrieveResult);
                         return entity;
@@ -1333,7 +1381,7 @@ var ngXrm;
                         "</request>"
                     ].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var resultNodes = self.__selectSingleNode(rslt, "//a:Entities");
+                        var resultNodes = Common.Helper.selectSingleNode(rslt, "//a:Entities");
                         var retriveMultipleResults = [];
                         for (var i = 0, ilength = resultNodes.childNodes.length; i < ilength; i++) {
                             var entity = new Common.BusinessEntity();
@@ -1473,7 +1521,7 @@ var ngXrm;
                         "</request>"
                     ].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var responseText = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+                        var responseText = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
                         var result = Common.Helper.crmXmlDecode(responseText);
                         return result;
                     });
@@ -1543,7 +1591,7 @@ var ngXrm;
                         "</request>"
                     ].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var responseText = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+                        var responseText = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
                         var result = Common.Helper.crmXmlDecode(responseText);
                         return result;
                     });
@@ -1613,7 +1661,7 @@ var ngXrm;
                         "</request>"
                     ].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var responseText = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+                        var responseText = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
                         var result = Common.Helper.crmXmlDecode(responseText);
                         return result;
                     });
@@ -1636,7 +1684,7 @@ var ngXrm;
                         "</request>"
                     ].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        return Common.Helper.getNodeText(self.__selectNodes(rslt, "//b:value")[0]);
+                        return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[0]);
                     });
                 };
                 /**
@@ -1652,7 +1700,7 @@ var ngXrm;
                         "<a:RequestName>WhoAmI</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        return Common.Helper.getNodeText(self.__selectNodes(rslt, "//b:value")[1]);
+                        return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[1]);
                     });
                 };
                 /**
@@ -1761,7 +1809,7 @@ var ngXrm;
                         "<a:RequestName>Assign</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var responseText = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+                        var responseText = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
                         var result = Common.Helper.crmXmlDecode(responseText);
                         return result;
                     });
@@ -1822,7 +1870,7 @@ var ngXrm;
                         "<a:RequestName>GrantAccess</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var responseText = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+                        var responseText = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
                         var result = Common.Helper.crmXmlDecode(responseText);
                         return result;
                     });
@@ -1883,7 +1931,7 @@ var ngXrm;
                         "<a:RequestName>ModifyAccess</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var responseText = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+                        var responseText = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
                         var result = Common.Helper.crmXmlDecode(responseText);
                         return result;
                     });
@@ -1937,7 +1985,7 @@ var ngXrm;
                         "<a:RequestName>RevokeAccess</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var responseText = self.__selectSingleNodeText(rslt, "//ser:ExecuteResult");
+                        var responseText = Common.Helper.selectSingleNodeText(rslt, "//ser:ExecuteResult");
                         var result = Common.Helper.crmXmlDecode(responseText);
                         return result;
                     });
@@ -1988,7 +2036,7 @@ var ngXrm;
                         "<a:RequestName>RetrievePrincipalAccess</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var result = self.__selectSingleNodeText(rslt, "//b:value");
+                        var result = Common.Helper.selectSingleNodeText(rslt, "//b:value");
                         return result.split(' ');
                     });
                 };
@@ -2103,7 +2151,7 @@ var ngXrm;
                         "<a:RequestName>RetrieveAllEntities</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var response = self.__selectNodes(rslt, "//c:EntityMetadata");
+                        var response = Common.Helper.selectNodes(rslt, "//c:EntityMetadata");
                         for (var i = 0, ilength = response.length; i < ilength; i++) {
                             var a = self.__objectifyNode(response[i]);
                             a._type = "EntityMetadata";
@@ -2158,7 +2206,7 @@ var ngXrm;
                         "<a:RequestName>RetrieveEntity</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var response = self.__selectNodes(rslt, "//b:value");
+                        var response = Common.Helper.selectNodes(rslt, "//b:value");
                         var results = [];
                         for (var i = 0, ilength = response.length; i < ilength; i++) {
                             var a = self.__objectifyNode(response[i]);
@@ -2209,7 +2257,7 @@ var ngXrm;
                         "<a:RequestName>RetrieveAttribute</a:RequestName>",
                         "</request>"].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        var response = self.__selectNodes(rslt, "//b:value");
+                        var response = Common.Helper.selectNodes(rslt, "//b:value");
                         var results = [];
                         for (var i = 0, ilength = response.length; i < ilength; i++) {
                             var a = self.__objectifyNode(response[i]);

@@ -134,7 +134,13 @@ module ngXrmServiceToolkit.Demo.ngApp.Services {
 
 			return self.ngXrmSoapSvc.execute(request)
 				.then((rslt) => {
-					let whoamiId: string = rslt.getElementsByTagName("a:Results")[0].childNodes[0].childNodes[1].text;
+					let whoamiId: string = '';
+					try {
+						whoamiId = rslt.getElementsByTagName("a:Results")[0].childNodes[0].childNodes[1].text;
+					} catch (ex) {
+						//Chrome
+						whoamiId = rslt.childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent;
+					}
 					return whoamiId;
 				})
 				.catch((error : any) => {
