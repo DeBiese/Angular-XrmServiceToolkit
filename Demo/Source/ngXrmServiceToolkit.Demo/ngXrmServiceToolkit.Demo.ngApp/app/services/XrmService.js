@@ -73,17 +73,9 @@ var ngXrmServiceToolkit;
                             "<a:RequestId i:nil='true' />",
                             "<a:RequestName>WhoAmI</a:RequestName>",
                             "</request>"].join("");
-                        return self.ngXrmSoapSvc.execute(request)
+                        return self.ngXrmSoapSvc.whoAmI()
                             .then(function (rslt) {
-                            var whoamiId = '';
-                            try {
-                                whoamiId = rslt.getElementsByTagName("a:Results")[0].childNodes[0].childNodes[1].text;
-                            }
-                            catch (ex) {
-                                //Chrome
-                                whoamiId = rslt.childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[1].textContent;
-                            }
-                            return whoamiId;
+                            return rslt.toString();
                         })
                             .catch(function (error) {
                             console.log(error);

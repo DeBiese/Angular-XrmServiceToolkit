@@ -516,11 +516,12 @@ var ngXrm;
                     }
                     else {
                         var output = [];
-                        var xPathResults = node.evaluate(xPathExpression, node, Helper.nsResolver, XPathResult.ANY_TYPE, null);
-                        var result = xPathResults.iterateNext();
+                        var xpe = new XPathEvaluator();
+                        var results = xpe.evaluate(xPathExpression, node, { lookupNamespaceURI: Helper.nsResolver }, XPathResult.ANY_TYPE, null);
+                        var result = results.iterateNext();
                         while (result) {
                             output.push(result);
-                            result = xPathResults.iterateNext();
+                            result = results.iterateNext();
                         }
                         return output;
                     }
@@ -630,6 +631,24 @@ var ngXrm;
                 return QueryOptions;
             })();
             Common.QueryOptions = QueryOptions;
+            var WhoAmIResult = (function () {
+                function WhoAmIResult(whoami) {
+                    if (whoami != null) {
+                        this.UserId = whoami.UserId;
+                        this.BusinessUnitId = whoami.BusinessUnitId;
+                        this.OrganizationId = whoami.OrganizationId;
+                    }
+                }
+                WhoAmIResult.prototype.toString = function () {
+                    return [
+                        ["UserId", this.UserId].join(":"),
+                        ["BusinessUnitId", this.BusinessUnitId].join(":"),
+                        ["OrganizationId", this.OrganizationId].join(":")
+                    ].join(" - ");
+                };
+                return WhoAmIResult;
+            })();
+            Common.WhoAmIResult = WhoAmIResult;
             /*
              * XrmContext :
              * Experimental implementation of the Context interface
@@ -1666,15 +1685,12 @@ var ngXrm;
                         return result;
                     });
                 };
-                /**
-                 * getCurrentUserId :
-                 * Sends $http request to retrieve the GUID of the current user.
+                /*
+                 * whoAmI :
+                 * Sends $http request to execute a whoamirequest.
                  * Tested : Success
                  */
-                SoapClient.prototype.getCurrentUserId = function () {
-                    ///<summary>
-                    /// Sends synchronous request to retrieve the GUID of the current user.
-                    ///</summary>
+                SoapClient.prototype.whoAmI = function () {
                     var self = this;
                     var request = [
                         "<request i:type='b:WhoAmIRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
@@ -1684,7 +1700,39 @@ var ngXrm;
                         "</request>"
                     ].join("");
                     return self._doRequest(request, "Execute").then(function (rslt) {
-                        return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[0]);
+                        //return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[0]);
+                        var whoamiResult = new Common.WhoAmIResult();
+                        var rsltNode = Common.Helper.selectSingleNode(rslt, "//a:Results");
+                        var keyValuePairs = Common.Helper.selectNodes(rsltNode, "a:KeyValuePairOfstringanyType");
+                        if (keyValuePairs != null && keyValuePairs.length > 0) {
+                            for (var i = 0; i < keyValuePairs.length; i++) {
+                                var currKey = Common.Helper.getNodeText(keyValuePairs[i].childNodes[0]);
+                                var currValue = Common.Helper.getNodeText(keyValuePairs[i].childNodes[1]);
+                                switch (currKey) {
+                                    case "UserId":
+                                        whoamiResult.UserId = currValue;
+                                        break;
+                                    case "BusinessUnitId":
+                                        whoamiResult.BusinessUnitId = currValue;
+                                        break;
+                                    case "OrganizationId":
+                                        whoamiResult.OrganizationId = currValue;
+                                        break;
+                                }
+                            }
+                        }
+                        return whoamiResult;
+                    });
+                };
+                /**
+                 * getCurrentUserId :
+                 * Sends $http request to retrieve the GUID of the current user.
+                 * Tested : Success
+                 */
+                SoapClient.prototype.getCurrentUserId = function () {
+                    var self = this;
+                    return self.whoAmI().then(function (rslt) {
+                        return rslt.UserId;
                     });
                 };
                 /**
@@ -1694,13 +1742,8 @@ var ngXrm;
                  */
                 SoapClient.prototype.getCurrentUserBusinessUnitId = function () {
                     var self = this;
-                    var request = ["<request i:type='b:WhoAmIRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
-                        "<a:Parameters xmlns:c='http://schemas.datacontract.org/2004/07/System.Collections.Generic' />",
-                        "<a:RequestId i:nil='true' />",
-                        "<a:RequestName>WhoAmI</a:RequestName>",
-                        "</request>"].join("");
-                    return self._doRequest(request, "Execute").then(function (rslt) {
-                        return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[1]);
+                    return self.whoAmI().then(function (rslt) {
+                        return rslt.BusinessUnitId;
                     });
                 };
                 /**

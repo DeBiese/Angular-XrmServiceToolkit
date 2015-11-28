@@ -49,7 +49,8 @@ Install-Package ngXrmServiceToolkit
 	setState: (entityName: string, id: string, stateCode: number, statusCode: number) => ng.IPromise<string>;
 	associate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: Common.BusinessEntity[]) => ng.IPromise<string>;
 	disassociate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: Common.BusinessEntity[]) => ng.IPromise<string>;
-	getCurrentUserId: () => ng.IPromise<string>;
+	whoAmI: () => ng.IPromise<Common.WhoAmIResult>;
+    getCurrentUserId: () => ng.IPromise<string>;
 	getCurrentUserBusinessUnitId: () => ng.IPromise<string>;
 	getCurrentUserRoles: () => ng.IPromise<string[]>;
 	isCurrentUserInRole: (args: string[]) => ng.IPromise<boolean>;
