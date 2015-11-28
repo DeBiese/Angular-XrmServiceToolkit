@@ -134,6 +134,12 @@ module ngXrm.XrmServiceToolkit.Common{
 		LanguageCode: number;
 	}
 
+	export interface IWhoAmIResult {
+		UserId: string;
+		BusinessUnitId: string;
+		OrganizationId: string;
+	}
+
 	export interface IXrmEntityCollection {
 		value: any[];
 		type?: string;
@@ -753,11 +759,12 @@ module ngXrm.XrmServiceToolkit.Common{
 			}
 			else {
 				let output = [];
-				let xPathResults = node.evaluate(xPathExpression, node, Helper.nsResolver, XPathResult.ANY_TYPE, null);
-				let result = xPathResults.iterateNext();
+				let xpe = new XPathEvaluator();
+				let results : XPathResult = xpe.evaluate(xPathExpression, node, { lookupNamespaceURI: Helper.nsResolver }, XPathResult.ANY_TYPE, null);
+				let result = results.iterateNext();
 				while (result) {
 					output.push(result);
-					result = xPathResults.iterateNext();
+					result = results.iterateNext();
 				}
 				return output;
 			}
@@ -883,6 +890,27 @@ module ngXrm.XrmServiceToolkit.Common{
 				this.columnSet = queryOptions.columnSet;
 				this.orderBy = queryOptions.orderBy;
 			}
+		}
+	}
+
+	export class WhoAmIResult {
+		UserId: string;
+		BusinessUnitId: string;
+		OrganizationId: string;
+		constructor(whoami?: IWhoAmIResult) {
+			if (whoami != null) {
+				this.UserId = whoami.UserId;
+				this.BusinessUnitId = whoami.BusinessUnitId;
+				this.OrganizationId = whoami.OrganizationId;
+			}
+		}
+
+		toString(): string {
+			return [
+				["UserId", this.UserId].join(":"),
+				["BusinessUnitId", this.BusinessUnitId].join(":"),
+				["OrganizationId", this.OrganizationId].join(":")
+			].join(" - ");
 		}
 	}
 
@@ -1070,6 +1098,7 @@ module ngXrm.XrmServiceToolkit.Soap {
 		setState: (entityName: string, id: string, stateCode: number, statusCode: number) => ng.IPromise<string>;
 		associate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: Common.BusinessEntity[]) => ng.IPromise<string>;
 		disassociate: (relationshipName: string, targetEntityName: string, targetId: string, relatedEntityName: string, relatedBusinessEntities: Common.BusinessEntity[]) => ng.IPromise<string>;
+		whoAmI: () => ng.IPromise<Common.WhoAmIResult>;
 		getCurrentUserId: () => ng.IPromise<string>;
 		getCurrentUserBusinessUnitId: () => ng.IPromise<string>;
 		getCurrentUserRoles: () => ng.IPromise<string[]>;
@@ -2068,15 +2097,12 @@ module ngXrm.XrmServiceToolkit.Soap {
 			});
 		}
 
-		/**
-		 * getCurrentUserId :
-		 * Sends $http request to retrieve the GUID of the current user.
+		/*
+		 * whoAmI : 
+		 * Sends $http request to execute a whoamirequest.
 		 * Tested : Success
 		 */
-		getCurrentUserId(): ng.IPromise<string> {
-			///<summary>
-			/// Sends synchronous request to retrieve the GUID of the current user.
-			///</summary>
+		whoAmI(): ng.IPromise<Common.WhoAmIResult> {
 			const self = this;
 			let request: string = [
 				"<request i:type='b:WhoAmIRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
@@ -2087,7 +2113,41 @@ module ngXrm.XrmServiceToolkit.Soap {
 			].join("");
 
 			return self._doRequest(request, "Execute").then((rslt) => {
-				return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[0]);
+				//return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[0]);
+				let whoamiResult: Common.WhoAmIResult = new Common.WhoAmIResult();
+				let rsltNode: any = Common.Helper.selectSingleNode(rslt, "//a:Results");
+				let keyValuePairs: any = Common.Helper.selectNodes(rsltNode, "a:KeyValuePairOfstringanyType");
+				if (keyValuePairs != null && keyValuePairs.length > 0) {
+					for (let i: number = 0; i < keyValuePairs.length; i++) {
+						let currKey = Common.Helper.getNodeText(keyValuePairs[i].childNodes[0]);
+						let currValue = Common.Helper.getNodeText(keyValuePairs[i].childNodes[1]);
+						switch (currKey) {
+							case "UserId":
+								whoamiResult.UserId = currValue;
+								break;
+							case "BusinessUnitId":
+								whoamiResult.BusinessUnitId = currValue;
+								break;
+							case "OrganizationId":
+								whoamiResult.OrganizationId = currValue;
+								break;
+						}
+					}
+				}
+				return whoamiResult;
+			});
+		}
+
+		/**
+		 * getCurrentUserId :
+		 * Sends $http request to retrieve the GUID of the current user.
+		 * Tested : Success
+		 */
+		getCurrentUserId(): ng.IPromise<string> {
+			const self = this;
+
+			return self.whoAmI().then((rslt) => {
+				return rslt.UserId;
 			});
 		}
 
@@ -2098,13 +2158,9 @@ module ngXrm.XrmServiceToolkit.Soap {
 		 */
 		getCurrentUserBusinessUnitId(): ng.IPromise<string> {
 			const self = this;
-			let request: string = ["<request i:type='b:WhoAmIRequest' xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts' xmlns:b='http://schemas.microsoft.com/crm/2011/Contracts'>",
-				"<a:Parameters xmlns:c='http://schemas.datacontract.org/2004/07/System.Collections.Generic' />",
-				"<a:RequestId i:nil='true' />",
-				"<a:RequestName>WhoAmI</a:RequestName>",
-				"</request>"].join("");
-			return self._doRequest(request, "Execute").then((rslt) => {
-				return Common.Helper.getNodeText(Common.Helper.selectNodes(rslt, "//b:value")[1]);
+
+			return self.whoAmI().then((rslt) => {
+				return rslt.BusinessUnitId;
 			});
 		}
 
